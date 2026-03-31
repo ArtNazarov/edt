@@ -1,0 +1,50 @@
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    border: 1px solid #ccc;
+    padding: 8px;
+    min-width: 50px;
+    height: 30px;
+}
+
+td[contenteditable="true"] {
+    cursor: pointer;
+    background: #f9f9f9;
+}
+
+td[contenteditable="true"]:focus {
+    background: white;
+    outline: 2px solid blue;
+}
+
+.sheets {
+    margin: 10px 0;
+}
+
+.sheet-link {
+    margin-right: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+    color: blue;
+}
+
+.sheet-link.active {
+    font-weight: bold;
+    color: black;
+}
+
+.controls {
+    margin: 10px 0;
+}
+
+button {
+    margin: 2px;
+    padding: 5px 10px;
+}
+
+#position-info {
+    margin: 10px 0;
+    font-weight: bold;
+}
