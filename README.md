@@ -2,6 +2,12 @@
 
 A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, and reactive formula computation.
 
+## Screenshots
+
+![UI](https://dl.dropbox.com/scl/fi/4mk968mznp8w3fyzxrfd0/_20260331_211514.png?rlkey=n1ox5zigg7hxecbjc6nl2u8lr&st=6yladcoe)
+
+![Tests](https://dl.dropbox.com/scl/fi/nohu66bvkuc74yj77h77s/Screenshot-2026-03-31-at-20-56-12-Test-Suite-Editable-Table-AST-Computation-Engine.png?rlkey=utuedizebdso8dp5xw9avi9qv&st=11facr13)
+
 ## Features
 
 - **7x7 Viewport:** Displays a fixed 7x7 grid of cells (7 rows × 7 columns)
