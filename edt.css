@@ -1,22 +1,31 @@
+/* edt.css - Updated with additional styles */
 table {
     border-collapse: collapse;
+    font-family: Arial, sans-serif;
 }
 
 td, th {
     border: 1px solid #ccc;
     padding: 8px;
-    min-width: 50px;
-    height: 30px;
+    min-width: 60px;
+    height: 32px;
+    text-align: right;
+}
+
+th {
+    background-color: #f2f2f2;
+    text-align: center;
 }
 
 td[contenteditable="true"] {
     cursor: pointer;
     background: #f9f9f9;
+    text-align: left;
 }
 
 td[contenteditable="true"]:focus {
     background: white;
-    outline: 2px solid blue;
+    outline: 2px solid #4CAF50;
 }
 
 .sheets {
@@ -27,24 +36,82 @@ td[contenteditable="true"]:focus {
     margin-right: 10px;
     cursor: pointer;
     text-decoration: underline;
-    color: blue;
+    color: #2196F3;
+    padding: 4px 8px;
+    border-radius: 3px;
 }
 
 .sheet-link.active {
     font-weight: bold;
-    color: black;
+    background-color: #e3f2fd;
+    color: #0b5e7e;
+    text-decoration: none;
 }
 
-.controls {
+.controls, .mode-controls {
     margin: 10px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 5px;
 }
 
 button {
     margin: 2px;
-    padding: 5px 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+button:hover {
+    background: #d0d0d0;
 }
 
 #position-info {
     margin: 10px 0;
     font-weight: bold;
+    font-family: monospace;
+}
+
+.mode-btn {
+    margin: 0 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    background: #e0e0e0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.mode-btn.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #45a049;
+}
+
+.mode-btn:hover:not(.active) {
+    background: #d0d0d0;
+}
+
+.cell-formula {
+    font-family: monospace;
+    color: #e67e22;
+    background-color: #fff3e0;
+}
+
+.cell-error {
+    background-color: #ffe6e6;
+    color: #d63031;
+    font-family: monospace;
+}
+
+.computed-value {
+    color: #2c3e50;
+    font-weight: normal;
+}
+
+td[rowspan], td[colspan] {
+    text-align: center;
 }

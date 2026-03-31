@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Suite - Editable Table AST Computation Engine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-controls {
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button.failed {
+            background: #f44336;
+        }
+        button.passed {
+            background: #4CAF50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .pass {
+            background: #d4edda !important;
+            color: #155724;
+        }
+        .fail {
+            background: #f8d7da !important;
+            color: #721c24;
+        }
+        .test-summary {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .summary-pass {
+            color: #155724;
+            font-weight: bold;
+        }
+        .summary-fail {
+            color: #721c24;
+            font-weight: bold;
+        }
+        .copy-btn {
+            background: #2196F3;
+            margin: 5px;
+        }
+        .copy-btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 AST Computation Engine Test Suite</h1>
+    <p>Testing ComputationEngine with AST-based formula evaluation</p>
+
+    <div class="test-controls">
+        <button onclick="runAllTests()">▶ Run All Tests</button>
+        <button onclick="showAll()">Show: All Tests</button>
+        <button onclick="showFailed()" class="failed">Failed Only</button>
+        <button onclick="showPassed()" class="passed">Passed Only</button>
+        <button onclick="copyFailedReport()" class="copy-btn">📋 Copy Failed Tests Report</button>
+        <button onclick="copyFullReport()" class="copy-btn">📋 Copy Full Test Report</button>
+    </div>
+
+    <div class="test-summary" id="test-summary">
+        <strong>Summary:</strong> <span id="summary-text">Run tests to see results</span>
+    </div>
+
+    <table id="test-results">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Test Name</th>
+                <th>Sheet / Cell</th>
+                <th>Formula / Input</th>
+                <th>Expected Output</th>
+                <th>Actual Output</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody id="test-body">
+            <tr>
+                <td colspan="7" style="text-align: center;">Loading tests...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script src="edt.js"></script>
+    <script>
+        // Test Cases Configuration
+        const testCases = [
+            {
+                id: 1,
+                name: "Basic Number",
+                sheet: "first",
+                cell: "A1",
+                setup: { "A1": "42" },
+                formula: "42",
+                expected: "42"
+            },
+            {
+                id: 2,
+                name: "Basic Addition",
+                sheet: "first",
+                cell: "B1",
+                setup: { "B1": "=10 + 20" },
+                formula: "=10 + 20",
+                expected: "30"
+            },
+            {
+                id: 3,
+                name: "Basic Subtraction",
+                sheet: "first",
+                cell: "C1",
+                setup: { "C1": "=50 - 25" },
+                formula: "=50 - 25",
+                expected: "25"
+            },
+            {
+                id: 4,
+                name: "Basic Multiplication",
+                sheet: "first",
+                cell: "D1",
+                setup: { "D1": "=5 * 6" },
+                formula: "=5 * 6",
+                expected: "30"
+            },
+            {
+                id: 5,
+                name: "Basic Division",
+                sheet: "first",
+                cell: "E1",
+                setup: { "E1": "=100 / 4" },
+                formula: "=100 / 4",
+                expected: "25"
+            },
+            {
+                id: 6,
+                name: "Cell Reference",
+                sheet: "first",
+                cell: "F1",
+                setup: { "A2": "15", "F1": "=A2" },
+                formula: "=A2",
+                expected: "15"
+            },
+            {
+                id: 7,
+                name: "Cell Reference Addition",
+                sheet: "first",
+                cell: "G1",
+                setup: { "A3": "10", "B3": "20", "G1": "=A3 + B3" },
+                formula: "=A3 + B3",
+                expected: "30"
+            },
+            {
+                id: 8,
+                name: "Complex Expression",
+                sheet: "first",
+                cell: "H1",
+                setup: { "A4": "10", "B4": "20", "C4": "5", "H1": "=(A4 + B4) * C4" },
+                formula: "=(A4 + B4) * C4",
+                expected: "150"
+            },
+            {
+                id: 9,
+                name: "SUM Function",
+                sheet: "first",
+                cell: "I1",
+                setup: { "A5": "10", "B5": "20", "C5": "30", "I1": "=SUM(A5:C5)" },
+                formula: "=SUM(A5:C5)",
+                expected: "60"
+            },
+            {
+                id: 10,
+                name: "AVG Function Local",
+                sheet: "first",
+                cell: "J1",
+                setup: { "A6": "10", "B6": "20", "C6": "30", "J1": "=AVG(A6:C6)" },
+                formula: "=AVG(A6:C6)",
+                expected: "20"
+            },
+            {
+                id: 11,
+                name: "MAX Function",
+                sheet: "first",
+                cell: "K1",
+                setup: { "A7": "10", "B7": "50", "C7": "30", "K1": "=MAX(A7:C7)" },
+                formula: "=MAX(A7:C7)",
+                expected: "50"
+            },
+            {
+                id: 12,
+                name: "MIN Function",
+                sheet: "first",
+                cell: "L1",
+                setup: { "A8": "10", "B8": "50", "C8": "30", "L1": "=MIN(A8:C8)" },
+                formula: "=MIN(A8:C8)",
+                expected: "10"
+            },
+            {
+                id: 13,
+                name: "COUNT Function",
+                sheet: "first",
+                cell: "M1",
+                setup: { "A9": "10", "B9": "20", "C9": "30", "M1": "=COUNT(A9:C9)" },
+                formula: "=COUNT(A9:C9)",
+                expected: "3"
+            },
+            {
+                id: 14,
+                name: "Cross-Sheet Reference",
+                sheet: "second",
+                cell: "A1",
+                setup: { "first.A10": "100", "second.A1": "=first.A10 + 50" },
+                formula: "=first.A10 + 50",
+                expected: "150"
+            },
+            {
+                id: 15,
+                name: "Cross-Sheet SUM",
+                sheet: "second",
+                cell: "B1",
+                setup: { "first.A11": "10", "first.B11": "20", "first.C11": "30", "second.B1": "=SUM(first.A11:first.C11)" },
+                formula: "=SUM(first.A11:first.C11)",
+                expected: "60"
+            },
+            {
+                id: 16,
+                name: "AVG Formula C17:E17",
+                sheet: "compute_avg",
+                cell: "A1",
+                setup: { "compute_avg.C17": "2", "compute_avg.D17": "2", "compute_avg.E17": "8", "compute_avg.A1": "=AVG(C17:E17)" },
+                formula: "=AVG(C17:E17)",
+                expected: "4"
+            },
+            {
+                id: 17,
+                name: "Decimal Handling",
+                sheet: "first",
+                cell: "N1",
+                setup: { "A12": "10.5", "B12": "20.75", "N1": "=A12 + B12" },
+                formula: "=A12 + B12",
+                expected: "31.25"
+            },
+            {
+                id: 18,
+                name: "Nested Parentheses",
+                sheet: "first",
+                cell: "O1",
+                setup: { "A13": "10", "B13": "20", "C13": "5", "O1": "=((A13 + B13) * C13) / 2" },
+                formula: "=((A13 + B13) * C13) / 2",
+                expected: "75"
+            },
+            {
+                id: 19,
+                name: "Division by Zero",
+                sheet: "first",
+                cell: "P1",
+                setup: { "A14": "100", "B14": "0", "P1": "=A14 / B14" },
+                formula: "=A14 / B14",
+                expected: "0"
+            },
+            {
+                id: 20,
+                name: "Combined Functions",
+                sheet: "first",
+                cell: "Q1",
+                setup: { "A15": "10", "B15": "20", "C15": "30", "D15": "40", "Q1": "=SUM(A15:B15) + MAX(C15:D15)" },
+                formula: "=SUM(A15:B15) + MAX(C15:D15)",
+                expected: "70"
+            },
+            {
+                id: 21,
+                name: "Cross-Sheet AVG Range",
+                sheet: "ext_avg",
+                cell: "A1",
+                setup: { "compute_avg.C17": "2", "compute_avg.D17": "2", "compute_avg.E17": "8", "ext_avg.A1": "=AVG(compute_avg.C17:compute_avg.E17)" },
+                formula: "=AVG(compute_avg.C17:compute_avg.E17)",
+                expected: "4"
+            },
+            {
+                id: 22,
+                name: "Mixed Cross-Sheet Expression",
+                sheet: "ext_avg",
+                cell: "B1",
+                setup: { "first.A16": "100", "compute_avg.A1": "5.5", "ext_avg.B1": "=first.A16 + compute_avg.A1" },
+                formula: "=first.A16 + compute_avg.A1",
+                expected: "105.5"
+            },
+            {
+                id: 23,
+                name: "Empty Cell Reference",
+                sheet: "first",
+                cell: "R1",
+                setup: { "A17": "", "R1": "=A17 + 10" },
+                formula: "=A17 + 10",
+                expected: "10"
+            },
+            {
+                id: 24,
+                name: "String Concatenation",
+                sheet: "first",
+                cell: "S1",
+                setup: { "A18": "Hello", "B18": "World", "S1": "=A18 + B18" },
+                formula: "=A18 + B18",
+                expected: "HelloWorld"
+            },
+            {
+                id: 25,
+                name: "Large Range SUM",
+                sheet: "first",
+                cell: "T1",
+                setup: { "A19": "1", "B19": "2", "C19": "3", "D19": "4", "T1": "=SUM(A19:D19)" },
+                formula: "=SUM(A19:D19)",
+                expected: "10"
+            }
+        ];
+
+        let testResults = [];
+        let computationEngine = null;
+        let dataHolder = null;
+
+        function initializeTestEnvironment() {
+            dataHolder = new DataHolder();
+            computationEngine = new ComputationEngine(dataHolder);
+
+            // Add test sheets if they don't exist
+            if (!dataHolder.sheets["compute_avg"]) {
+                dataHolder.sheets["compute_avg"] = {
+                    start_row: 1,
+                    start_col: 1,
+                    cells: []
+                };
+            }
+            if (!dataHolder.sheets["ext_avg"]) {
+                dataHolder.sheets["ext_avg"] = {
+                    start_row: 1,
+                    start_col: 1,
+                    cells: []
+                };
+            }
+        }
+
+        function setupTestData(testCase) {
+            const sheetName = testCase.sheet;
+
+            // Ensure sheet exists
+            if (!dataHolder.sheets[sheetName]) {
+                dataHolder.sheets[sheetName] = {
+                    start_row: 1,
+                    start_col: 1,
+                    cells: []
+                };
+            }
+
+            // Setup cells for this test
+            for (const [cellId, value] of Object.entries(testCase.setup)) {
+                let targetSheet = sheetName;
+                let targetCell = cellId;
+
+                // Handle cross-sheet references in setup
+                if (cellId.includes('.')) {
+                    const parts = cellId.split('.');
+                    targetSheet = parts[0];
+                    targetCell = parts[1];
+
+                    if (!dataHolder.sheets[targetSheet]) {
+                        dataHolder.sheets[targetSheet] = {
+                            start_row: 1,
+                            start_col: 1,
+                            cells: []
+                        };
+                    }
+                }
+
+                dataHolder.updateCell(targetSheet, targetCell, value);
+            }
+
+            computationEngine.clearCache();
+        }
+
+        function runTest(testCase) {
+            setupTestData(testCase);
+
+            const sheetName = testCase.sheet;
+            const cellId = testCase.cell;
+            const formula = testCase.formula;
+            const expected = testCase.expected;
+
+            let actual;
+
+            try {
+                const sheet = dataHolder.sheets[sheetName];
+                const cell = sheet.cells.find(c => c.cell === cellId);
+
+                if (cell && cell.data) {
+                    actual = computationEngine.computeCellValue(sheetName, cell);
+                } else {
+                    // Direct formula evaluation
+                    if (formula.startsWith('=')) {
+                        actual = computationEngine.computeValue(sheetName, cellId, formula);
+                    } else {
+                        actual = formula;
+                    }
+                }
+
+                // Format for comparison
+                if (typeof actual === 'number') {
+                    actual = Math.round(actual * 100) / 100;
+                }
+                if (typeof expected === 'number') {
+                    expected = Math.round(expected * 100) / 100;
+                }
+
+            } catch (error) {
+                actual = `#ERROR: ${error.message}`;
+            }
+
+            const passed = String(actual) === String(expected);
+
+            return {
+                id: testCase.id,
+                name: testCase.name,
+                sheet: `${testCase.sheet}.${testCase.cell}`,
+                formula: testCase.formula,
+                expected: String(expected),
+                actual: String(actual),
+                passed: passed
+            };
+        }
+
+        function runAllTests() {
+            initializeTestEnvironment();
+            testResults = [];
+
+            for (const testCase of testCases) {
+                const result = runTest(testCase);
+                testResults.push(result);
+            }
+
+            renderResults();
+            updateSummary();
+        }
+
+        function renderResults(filter = 'all') {
+            const tbody = document.getElementById('test-body');
+            tbody.innerHTML = '';
+
+            const filteredResults = testResults.filter(r => {
+                if (filter === 'failed') return !r.passed;
+                if (filter === 'passed') return r.passed;
+                return true;
+            });
+
+            if (filteredResults.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No tests to display</td></tr>';
+                return;
+            }
+
+            for (const result of filteredResults) {
+                const row = document.createElement('tr');
+                row.className = result.passed ? 'pass' : 'fail';
+
+                row.innerHTML = `
+                    <td>${result.id}</td>
+                    <td>${result.name}</td>
+                    <td>${result.sheet}</td>
+                    <td><code>${escapeHtml(result.formula)}</code></td>
+                    <td><code>${escapeHtml(result.expected)}</code></td>
+                    <td><code>${escapeHtml(result.actual)}</code></td>
+                    <td>${result.passed ? '✅ PASS' : '❌ FAIL'}</td>
+                `;
+
+                tbody.appendChild(row);
+            }
+        }
+
+        function updateSummary() {
+            const total = testResults.length;
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = total - passed;
+
+            const summaryText = document.getElementById('summary-text');
+            summaryText.innerHTML = `
+                Total: <span class="${passed === total ? 'summary-pass' : 'summary-fail'}">${total}</span> |
+                Passed: <span class="summary-pass">${passed}</span> |
+                Failed: <span class="summary-fail">${failed}</span>
+            `;
+        }
+
+        function showAll() {
+            renderResults('all');
+        }
+
+        function showFailed() {
+            renderResults('failed');
+        }
+
+        function showPassed() {
+            renderResults('passed');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#39;');
+        }
+
+        function copyFailedReport() {
+            const failedTests = testResults.filter(r => !r.passed);
+            let report = '🧪 AST Computation Engine - Failed Tests Report\n';
+            report += '='.repeat(60) + '\n\n';
+
+            if (failedTests.length === 0) {
+                report += 'No failed tests! All tests passed.\n';
+            } else {
+                report += `Total Failed: ${failedTests.length}\n\n`;
+
+                for (const test of failedTests) {
+                    report += `Test #${test.id}: ${test.name}\n`;
+                    report += `  Sheet/Cell: ${test.sheet}\n`;
+                    report += `  Formula: ${test.formula}\n`;
+                    report += `  Expected: ${test.expected}\n`;
+                    report += `  Actual: ${test.actual}\n`;
+                    report += '\n';
+                }
+            }
+
+            navigator.clipboard.writeText(report).then(() => {
+                alert('Failed tests report copied to clipboard!');
+            });
+        }
+
+        function copyFullReport() {
+            let report = '🧪 AST Computation Engine - Full Test Report\n';
+            report += '='.repeat(60) + '\n\n';
+
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = testResults.filter(r => !r.passed).length;
+
+            report += `Total Tests: ${testResults.length}\n`;
+            report += `Passed: ${passed}\n`;
+            report += `Failed: ${failed}\n\n`;
+            report += '-'.repeat(60) + '\n\n';
+
+            for (const test of testResults) {
+                report += `Test #${test.id}: ${test.name} [${test.passed ? 'PASS' : 'FAIL'}]\n`;
+                report += `  Sheet/Cell: ${test.sheet}\n`;
+                report += `  Formula: ${test.formula}\n`;
+                report += `  Expected: ${test.expected}\n`;
+                report += `  Actual: ${test.actual}\n`;
+                report += '\n';
+            }
+
+            navigator.clipboard.writeText(report).then(() => {
+                alert('Full test report copied to clipboard!');
+            });
+        }
+
+        // Auto-run tests on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                runAllTests();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
