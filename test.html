@@ -87,6 +87,11 @@
         .copy-btn:hover {
             background: #1976D2;
         }
+        .test-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -353,6 +358,106 @@
                 setup: { "A19": "1", "B19": "2", "C19": "3", "D19": "4", "T1": "=SUM(A19:D19)" },
                 formula: "=SUM(A19:D19)",
                 expected: "10"
+            },
+            {
+                id: 26,
+                name: "SUMPRODUCT Basic Two Ranges",
+                sheet: "sumproduct_test",
+                cell: "E1",
+                setup: {
+                    "sumproduct_test.C1": "5",
+                    "sumproduct_test.C2": "1",
+                    "sumproduct_test.D1": "8",
+                    "sumproduct_test.D2": "7",
+                    "sumproduct_test.E1": "=SUMPRODUCT(C1:C2, D1:D2)"
+                },
+                formula: "=SUMPRODUCT(C1:C2, D1:D2)",
+                expected: "47",
+                description: "5*8 + 1*7 = 40 + 7 = 47"
+            },
+            {
+                id: 27,
+                name: "SUMPRODUCT With Three Ranges",
+                sheet: "sumproduct_test",
+                cell: "E2",
+                setup: {
+                    "sumproduct_test.A1": "2",
+                    "sumproduct_test.A2": "3",
+                    "sumproduct_test.B1": "4",
+                    "sumproduct_test.B2": "5",
+                    "sumproduct_test.C1": "6",
+                    "sumproduct_test.C2": "7",
+                    "sumproduct_test.E2": "=SUMPRODUCT(A1:A2, B1:B2, C1:C2)"
+                },
+                formula: "=SUMPRODUCT(A1:A2, B1:B2, C1:C2)",
+                expected: "153",
+                description: "(2*4*6) + (3*5*7) = 153."
+            },
+            {
+                id: 28,
+                name: "SUMPRODUCT With Decimal Values",
+                sheet: "sumproduct_test",
+                cell: "E3",
+                setup: {
+                    "sumproduct_test.A3": "1.5",
+                    "sumproduct_test.A4": "2.5",
+                    "sumproduct_test.B3": "3.5",
+                    "sumproduct_test.B4": "4.5",
+                    "sumproduct_test.E3": "=SUMPRODUCT(A3:A4, B3:B4)"
+                },
+                formula: "=SUMPRODUCT(A3:A4, B3:B4)",
+                expected: "16.5",
+                description: "1.5*3.5 + 2.5*4.5 = 5.25 + 11.25 = 16.5"
+            },
+            {
+                id: 29,
+                name: "SUMPRODUCT With Cross-Sheet References",
+                sheet: "sumproduct_cross",
+                cell: "A1",
+                setup: {
+                    "first.A20": "10",
+                    "first.A21": "20",
+                    "second.C20": "5",
+                    "second.C21": "3",
+                    "sumproduct_cross.A1": "=SUMPRODUCT(first.A20:A21, second.C20:C21)"
+                },
+                formula: "=SUMPRODUCT(first.A20:A21, second.C20:C21)",
+                expected: "110",
+                description: "10*5 + 20*3 = 50 + 60 = 110"
+            },
+            {
+                id: 30,
+                name: "SUMPRODUCT With Single Row Ranges",
+                sheet: "sumproduct_test",
+                cell: "E4",
+                setup: {
+                    "sumproduct_test.A5": "1",
+                    "sumproduct_test.B5": "2",
+                    "sumproduct_test.C5": "3",
+                    "sumproduct_test.A6": "4",
+                    "sumproduct_test.B6": "5",
+                    "sumproduct_test.C6": "6",
+                    "sumproduct_test.E4": "=SUMPRODUCT(A5:C5, A6:C6)"
+                },
+                formula: "=SUMPRODUCT(A5:C5, A6:C6)",
+                expected: "32",
+                description: "1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32"
+            },
+            {
+                id: 31,
+                name: "SUMPRODUCT With Empty Cells",
+                sheet: "sumproduct_test",
+                cell: "E5",
+                setup: {
+                    "sumproduct_test.A7": "5",
+                    "sumproduct_test.A8": "",
+                    "sumproduct_test.B7": "10",
+                    "sumproduct_test.B8": "20",
+                    "sumproduct_test.E5": "=SUMPRODUCT(A7:A8, B7:B8)"
+                },
+                formula: "=SUMPRODUCT(A7:A8, B7:B8)",
+                expected: "50",
+                description: "5*10 + 0*20 = 50 (empty cell treated as 0)"
             }
         ];
 
@@ -365,20 +470,16 @@
             computationEngine = new ComputationEngine(dataHolder);
 
             // Add test sheets if they don't exist
-            if (!dataHolder.sheets["compute_avg"]) {
-                dataHolder.sheets["compute_avg"] = {
-                    start_row: 1,
-                    start_col: 1,
-                    cells: []
-                };
-            }
-            if (!dataHolder.sheets["ext_avg"]) {
-                dataHolder.sheets["ext_avg"] = {
-                    start_row: 1,
-                    start_col: 1,
-                    cells: []
-                };
-            }
+            const testSheets = ["compute_avg", "ext_avg", "sumproduct_test", "sumproduct_cross"];
+            testSheets.forEach(sheetName => {
+                if (!dataHolder.sheets[sheetName]) {
+                    dataHolder.sheets[sheetName] = {
+                        start_row: 1,
+                        start_col: 1,
+                        cells: []
+                    };
+                }
+            });
         }
 
         function setupTestData(testCase) {
@@ -465,7 +566,8 @@
                 formula: testCase.formula,
                 expected: String(expected),
                 actual: String(actual),
-                passed: passed
+                passed: passed,
+                description: testCase.description || ''
             };
         }
 
@@ -501,11 +603,16 @@
                 const row = document.createElement('tr');
                 row.className = result.passed ? 'pass' : 'fail';
 
+                let formulaDisplay = `<code>${escapeHtml(result.formula)}</code>`;
+                if (result.description) {
+                    formulaDisplay += `<div class="test-description">📝 ${escapeHtml(result.description)}</div>`;
+                }
+
                 row.innerHTML = `
                     <td>${result.id}</td>
-                    <td>${result.name}</td>
-                    <td>${result.sheet}</td>
-                    <td><code>${escapeHtml(result.formula)}</code></td>
+                    <td>${escapeHtml(result.name)}</td>
+                    <td>${escapeHtml(result.sheet)}</td>
+                    <td>${formulaDisplay}</td>
                     <td><code>${escapeHtml(result.expected)}</code></td>
                     <td><code>${escapeHtml(result.actual)}</code></td>
                     <td>${result.passed ? '✅ PASS' : '❌ FAIL'}</td>
@@ -525,6 +632,7 @@
                 Total: <span class="${passed === total ? 'summary-pass' : 'summary-fail'}">${total}</span> |
                 Passed: <span class="summary-pass">${passed}</span> |
                 Failed: <span class="summary-fail">${failed}</span>
+                ${failed > 0 ? ' | ❌ Some tests failed!' : ' | ✅ All tests passed!'}
             `;
         }
 
@@ -563,6 +671,7 @@
                     report += `Test #${test.id}: ${test.name}\n`;
                     report += `  Sheet/Cell: ${test.sheet}\n`;
                     report += `  Formula: ${test.formula}\n`;
+                    if (test.description) report += `  Description: ${test.description}\n`;
                     report += `  Expected: ${test.expected}\n`;
                     report += `  Actual: ${test.actual}\n`;
                     report += '\n';
@@ -590,6 +699,7 @@
                 report += `Test #${test.id}: ${test.name} [${test.passed ? 'PASS' : 'FAIL'}]\n`;
                 report += `  Sheet/Cell: ${test.sheet}\n`;
                 report += `  Formula: ${test.formula}\n`;
+                if (test.description) report += `  Description: ${test.description}\n`;
                 report += `  Expected: ${test.expected}\n`;
                 report += `  Actual: ${test.actual}\n`;
                 report += '\n';

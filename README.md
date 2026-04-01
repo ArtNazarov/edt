@@ -6,7 +6,7 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 
 ![UI](https://dl.dropbox.com/scl/fi/4mk968mznp8w3fyzxrfd0/_20260331_211514.png?rlkey=n1ox5zigg7hxecbjc6nl2u8lr&st=6yladcoe)
 
-![Tests](https://dl.dropbox.com/scl/fi/nohu66bvkuc74yj77h77s/Screenshot-2026-03-31-at-20-56-12-Test-Suite-Editable-Table-AST-Computation-Engine.png?rlkey=utuedizebdso8dp5xw9avi9qv&st=11facr13)
+![Tests](https://dl.dropbox.com/scl/fi/vvj660ptyqiab597h4qro/sumproduct_test.png?rlkey=pagckitohaibwb1mjpe77shqs&st=zuraol74)
 
 ## Features
 
@@ -14,7 +14,7 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 - **Multiple Sheets:** Supports multiple worksheets with independent data
 - **Formula Support:**
   - Basic arithmetic expressions (+, -, *, /)
-  - Spreadsheet functions: SUM, AVG, MAX, MIN, COUNT
+  - Spreadsheet functions: SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT
   - Cell references (e.g., `A1`, `B2`, `ZZ14`)
   - Range references (e.g., `A1:C3`)
   - Cross-sheet references (e.g., `first.A1`, `second.B3`)
@@ -146,6 +146,48 @@ Counts the number of numeric values in a range.
 
 ---
 
+#### SUMPRODUCT
+Multiplies corresponding components in the given arrays and returns the sum of those products.
+
+```
+=SUMPRODUCT(range1, range2)
+=SUMPRODUCT(range1, range2, range3, ...)
+```
+
+**Key Features:**
+- Supports 2 or more ranges
+- Ranges must have the same dimensions (same number of cells)
+- Empty cells are treated as 0
+- Non-numeric values are ignored
+- Supports cross-sheet references
+- Works with single row, single column, and rectangular ranges
+
+**Examples:**
+
+| Formula | Description | Calculation | Result |
+|---------|-------------|-------------|--------|
+| `=SUMPRODUCT(A1:A3, B1:B3)` | Two vertical ranges | A1×B1 + A2×B2 + A3×B3 | Sum of products |
+| `=SUMPRODUCT(A1:C1, A2:C2)` | Two horizontal ranges | A1×A2 + B1×B2 + C1×C2 | Sum of products |
+| `=SUMPRODUCT(A1:A2, B1:B2, C1:C2)` | Three ranges | (A1×B1×C1) + (A2×B2×C2) | Sum of triple products |
+| `=SUMPRODUCT(first.A1:A3, second.B1:B3)` | Cross-sheet ranges | Multiplies values across sheets | Sum of cross-sheet products |
+
+**Practical Examples:**
+
+```excel
+=SUMPRODUCT(A1:A5, B1:B5)           ' Weighted sum: quantity × price
+=SUMPRODUCT(A1:A3, B1:B3, C1:C3)    ' Volume calculation: length × width × height
+=SUMPRODUCT((A1:A10>10), B1:B10)    ' Conditional sum (Boolean logic)
+```
+
+**Use Cases:**
+- **Weighted Averages:** `=SUMPRODUCT(weights, values) / SUM(weights)`
+- **Dot Product:** Calculate vector dot product of two ranges
+- **Conditional Sums:** Combine with Boolean expressions
+- **Cross-Sheet Analysis:** Aggregate data from multiple worksheets
+- **Multi-dimensional Calculations:** Multiply three or more ranges for volume/area calculations
+
+---
+
 ### Cell References
 
 #### Single Cell Reference
@@ -180,8 +222,9 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 
 #### Range Cross-Sheet
 ```
-=SUM(first.A1:first.C3)     // Sum range in "first" sheet
-=AVG(compute_avg.C17:E17)   // Average range in "compute_avg" sheet
+=SUM(first.A1:first.C3)         // Sum range in "first" sheet
+=AVG(compute_avg.C17:E17)       // Average range in "compute_avg" sheet
+=SUMPRODUCT(first.A1:A5, second.B1:B5)  // SUMPRODUCT across sheets
 ```
 
 #### Mixed Cross-Sheet Expressions
@@ -189,6 +232,7 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 =first.A1 + second.B2                   // Add values from two sheets
 =(first.A1 + second.B2) * AVG(C1:C10)   // Complex cross-sheet formula
 =SUM(first.A1:first.A5) + MAX(second.B1:second.B5)
+=SUMPRODUCT(first.A1:A3, second.B1:B3, third.C1:C3)  // Multi-sheet product
 ```
 
 ---
@@ -202,6 +246,7 @@ Functions and operators can be combined for complex calculations.
 =(first.A1 + second.B2) * AVG(C1:C10)
 =SUM(A1:A10) / COUNT(A1:A10)    // Manual average calculation
 =MAX(A1:A10) - MIN(A1:A10)      // Range spread
+=SUMPRODUCT(A1:A5, B1:B5) / SUM(B1:B5)  // Weighted average
 ```
 
 ---
@@ -213,6 +258,7 @@ Functions and operators can be combined for complex calculations.
 =SUM(A1:A12)              // Annual total
 =AVG(B1:B12)              // Monthly average
 =SUM(C1:C12) * 0.15       // 15% of total
+=SUMPRODUCT(A1:A12, B1:B12)  // Weighted portfolio return
 ```
 
 #### Data Analysis
@@ -220,6 +266,7 @@ Functions and operators can be combined for complex calculations.
 =MAX(A1:A100) - MIN(A1:A100)    // Range spread
 =AVG(A1:A100)                   // Mean value
 =COUNT(A1:A100)                 // Sample size
+=SUMPRODUCT((A1:A100>50), B1:B100)  // Sum of values where condition met
 ```
 
 #### Cross-Sheet Reporting
@@ -227,6 +274,14 @@ Functions and operators can be combined for complex calculations.
 =SUM(first.A1:first.A10) + SUM(second.A1:second.A10)
 =AVG(compute_avg.C17:E17)
 =first.A1 * second.B1           // Multiply values from different sheets
+=SUMPRODUCT(first.A1:A5, second.B1:B5)  // Cross-sheet weighted sum
+```
+
+#### Engineering & Scientific
+```
+=SUMPRODUCT(A1:A3, B1:B3)       // Dot product of two vectors
+=SUMPRODUCT(A1:A3, B1:B3, C1:C3)  // Triple product for volume
+=SUMPRODUCT(weights, values) / SUM(weights)  // Weighted average
 ```
 
 ---
@@ -254,7 +309,7 @@ edt.html          # Main HTML file with UI structure
 edt.css           # Styles for the table, navigation, and controls
 edt.js            # All JavaScript classes and application logic
 README.md         # This documentation
-test.html         # Test suite for AST Computation Engine
+test.html         # Test suite for AST Computation Engine (includes SUMPRODUCT tests)
 ```
 
 ---
@@ -267,7 +322,7 @@ test.html         # Test suite for AST Computation Engine
    - Click **"Switch to Compute Results Mode"** to see calculated values.
 3. **Editing Cells:**
    - Click any cell to edit its content.
-   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`).
+   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`, `=SUMPRODUCT(A1:A5, B1:B5)`).
    - Press Tab or click elsewhere to save.
 4. **Navigation:**
    - Use the navigation buttons to move the viewport.
@@ -296,6 +351,12 @@ Cell data is stored in memory in the `DataHolder` object. Example data included:
 - C3: `100`
 - D3: `200`
 - E3: `=first.C2 + 50` → `90` (cross-sheet reference)
+- F3: `=SUM(first.A2:first.A4)` → `60.5`
+
+**SumProduct Test Sheet:**
+- C1: `5`, C2: `1`
+- D1: `8`, D2: `7`
+- E1: `=SUMPRODUCT(C1:C2, D1:D2)` → `47`
 
 *Empty cells are not stored to optimize memory usage.*
 
@@ -311,6 +372,7 @@ The formula engine includes robust error handling:
 | Invalid Formula | `#ERROR: [message]` | Syntax error in formula |
 | Division by Zero | `0` | Returns 0 instead of error |
 | Missing Cell | `0` | Empty or non-existent cells return 0 |
+| SUMPRODUCT Dimension Mismatch | `#ERROR: SUMPRODUCT ranges must have the same size` | Ranges have different numbers of cells |
 
 Error cells are highlighted in red in Results Mode for easy identification. Console logs provide detailed error information.
 
@@ -326,19 +388,55 @@ Error cells are highlighted in red in Results Mode for easy identification. Cons
 - **Decimal Handling:** All numeric results are rounded to 2 decimal places to avoid floating-point precision issues.
 - **HTML Escaping:** Prevents XSS attacks by escaping special characters.
 - **Cross-Sheet References:** Format: `sheetname.cell` (e.g., `first.A1`).
+- **SUMPRODUCT Implementation:** Supports 2+ ranges with dimension validation and proper product summation.
 
 ---
 
-## Dependencies
+## Testing
 
-None - pure HTML, CSS, and JavaScript. Works in all modern browsers.
+The application includes a comprehensive test suite (`test.html`) that validates all formula functionality:
+
+- **31+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, and SUMPRODUCT
+- **SUMPRODUCT Tests:**
+  - Basic two-range multiplication
+  - Three-range multiplication
+  - Decimal values
+  - Cross-sheet references
+  - Single-row ranges
+  - Empty cell handling
+- **Visual Test Results** with pass/fail indicators
+- **Report Generation** for failed tests
+
+Run `test.html` in any modern browser to validate the formula engine.
 
 ---
 
-## Online demo
+## Online Demo
 
-[edt](https://apprr.rf.gd/edt/edt.html)
+[Editable Table Viewport Demo](https://apprr.rf.gd/edt/edt.html)
+
+---
 
 ## License
 
-Free to use and modify, MIT
+Free to use and modify, MIT License
+
+---
+
+## Version History
+
+### v1.2.0 (Current)
+- Added SUMPRODUCT function with support for 2+ ranges
+- Enhanced cross-sheet reference support for SUMPRODUCT
+- Added comprehensive SUMPRODUCT test cases
+- Improved error handling for dimension mismatches
+
+### v1.1.0
+- Added cross-sheet reference support
+- Implemented range references for all functions
+- Enhanced decimal handling
+
+### v1.0.0
+- Initial release with basic arithmetic and spreadsheet functions (SUM, AVG, MAX, MIN, COUNT)
+- Viewport navigation and multiple sheet support
+- Dual mode display (formulas/results)

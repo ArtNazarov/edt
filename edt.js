@@ -1,4 +1,5 @@
 // edt.js - Fixed version with proper decimal handling and bug fixes
+// Added SUMPRODUCT function support for range multiplication and summation
 
 // ==================== AST Node Types ====================
 class ASTNode {
@@ -310,6 +311,12 @@ class ASTEvaluator {
     }
 
     evaluateFunction(node) {
+        // Handle SUMPRODUCT specially - it requires paired ranges
+        if (node.value === 'SUMPRODUCT') {
+            return this.evaluateSumProduct(node);
+        }
+
+        // For other functions, collect all numeric values
         const values = [];
 
         for (const arg of node.args) {
@@ -350,6 +357,68 @@ class ASTEvaluator {
         }
         // Round to 2 decimal places
         return Math.round(result * 100) / 100;
+    }
+
+    evaluateSumProduct(node) {
+        // SUMPRODUCT requires an even number of arguments, typically ranges
+        // Each pair of ranges is multiplied element-wise and summed
+        const args = node.args;
+
+        if (args.length < 2) {
+            return '#ERROR: SUMPRODUCT requires at least two ranges';
+        }
+
+        // Parse each argument into an array of numeric values
+        const argValues = [];
+
+        for (const arg of args) {
+            const values = [];
+            if (arg.type === 'range') {
+                const rangeValues = this.evaluateRange(arg.start, arg.end);
+                values.push(...rangeValues);
+            } else if (arg.type === 'expression') {
+                const val = this.evaluate(arg.value);
+                if (typeof val === 'number' && !isNaN(val)) {
+                    values.push(val);
+                }
+            } else {
+                return '#ERROR: SUMPRODUCT arguments must be ranges';
+            }
+            argValues.push(values);
+        }
+
+        // Check that all arguments have the same length
+        const firstLength = argValues[0].length;
+        for (let i = 1; i < argValues.length; i++) {
+            if (argValues[i].length !== firstLength) {
+                return '#ERROR: SUMPRODUCT ranges must have the same size';
+            }
+        }
+
+        // If we have an odd number of arguments, treat them as pairs
+        // If even number, pair them sequentially
+        let total = 0;
+
+        if (argValues.length === 2) {
+            // Standard case: two ranges multiplied element-wise
+            for (let i = 0; i < firstLength; i++) {
+                total += argValues[0][i] * argValues[1][i];
+            }
+        } else {
+            // For more than 2 arguments, we need to handle proper pairing
+            // According to Excel: =SUMPRODUCT(A1:A5, B1:B5, C1:C5) = A1*B1*C1 + ... + A5*B5*C5
+            // So we multiply across all arguments for each position
+            for (let i = 0; i < firstLength; i++) {
+                let product = argValues[0][i];
+                for (let j = 1; j < argValues.length; j++) {
+                    product *= argValues[j][i];
+                }
+                total += product;
+            }
+        }
+
+        // Round to 2 decimal places
+        return Math.round(total * 100) / 100;
     }
 
     evaluateRange(startNode, endNode) {
@@ -514,7 +583,20 @@ class DataHolder {
                     {"cell": "E3", "data": "=first.C2 + 50"},
                     {"cell": "F3", "data": "=SUM(first.A2:first.A4)"}
                 ]
-            }
+            },
+          "sumproduct": {
+                    start_row: 1,
+                    start_col: 1,
+                    cells: [
+                        {"cell": "A1", "data": "2"},
+                        {"cell": "A2", "data": "3"},
+                        {"cell": "B1", "data": "4"},
+                        {"cell": "B2", "data": "5"},
+                        {"cell": "C1", "data": "6"},
+                        {"cell": "C2", "data": "7"},
+                        {"cell": "E2", "data": "=SUMPRODUCT(A1:A2, B1:B2, C1:C2)"}
+                    ]
+                }
         };
         this.currentSheet = 'first';
     }
@@ -625,9 +707,9 @@ class SheetView {
         const cells = this.viewModel.getCells();
         const showFormulas = this.viewModel.showFormulas;
 
-        let table = '<table><thead><tr><th>Row</th>';
+        let table = '<table><thead>;<th>Row</th>';
         for (let col = start_col; col <= end_col; col++) table += `<th>${this.getColumnLetter(col)}</th>`;
-        table += '</tr></thead><tbody>';
+        table += '</thead><tbody>';
 
         for (let row = start_row; row <= end_row; row++) {
             table += `<tr><td contenteditable="false">${row}</td>`;
