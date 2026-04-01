@@ -335,6 +335,10 @@ None - pure HTML, CSS, and JavaScript. Works in all modern browsers.
 
 ---
 
+## Online demo
+
+[edt](https://apprr.rf.gd/edt/edt.html)
+
 ## License
 
 Free to use and modify, MIT
