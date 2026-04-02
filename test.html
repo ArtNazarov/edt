@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -125,7 +125,7 @@
         </thead>
         <tbody id="test-body">
             <tr>
-                <td colspan="7" style="text-align: center;">Loading tests...</td>
+                <td colspan="7" style="text-align: center;">Loading tests...<\/td>
             </tr>
         </tbody>
     </table>
@@ -458,6 +458,44 @@
                 formula: "=SUMPRODUCT(A7:A8, B7:B8)",
                 expected: "50",
                 description: "5*10 + 0*20 = 50 (empty cell treated as 0)"
+            },
+            {
+                id: 32,
+                name: "VLOOKUP Exact Match - Value Found",
+                sheet: "vlookup_test",
+                cell: "E1",
+                setup: {
+                    "vlookup_test.A1": "Product A",
+                    "vlookup_test.B1": "100",
+                    "vlookup_test.A2": "Product B",
+                    "vlookup_test.B2": "200",
+                    "vlookup_test.A3": "Product C",
+                    "vlookup_test.B3": "300",
+                    "vlookup_test.D1": "Product B",
+                    "vlookup_test.E1": "=VLOOKUP(D1, A1:B3, 2, FALSE)"
+                },
+                formula: "=VLOOKUP(D1, A1:B3, 2, FALSE)",
+                expected: "200",
+                description: "Looks up 'Product B' in column A, returns corresponding value 200 from column B"
+            },
+            {
+                id: 33,
+                name: "VLOOKUP Exact Match - Value Not Found",
+                sheet: "vlookup_test",
+                cell: "E2",
+                setup: {
+                    "vlookup_test.A4": "Product X",
+                    "vlookup_test.B4": "400",
+                    "vlookup_test.A5": "Product Y",
+                    "vlookup_test.B5": "500",
+                    "vlookup_test.A6": "Product Z",
+                    "vlookup_test.B6": "600",
+                    "vlookup_test.D2": "Product W",
+                    "vlookup_test.E2": "=VLOOKUP(D2, A4:B6, 2, FALSE)"
+                },
+                formula: "=VLOOKUP(D2, A4:B6, 2, FALSE)",
+                expected: "#N/A",
+                description: "Looks up 'Product W' which doesn't exist in the table, returns #N/A"
             }
         ];
 
@@ -470,7 +508,7 @@
             computationEngine = new ComputationEngine(dataHolder);
 
             // Add test sheets if they don't exist
-            const testSheets = ["compute_avg", "ext_avg", "sumproduct_test", "sumproduct_cross"];
+            const testSheets = ["compute_avg", "ext_avg", "sumproduct_test", "sumproduct_cross", "vlookup_test"];
             testSheets.forEach(sheetName => {
                 if (!dataHolder.sheets[sheetName]) {
                     dataHolder.sheets[sheetName] = {
@@ -482,7 +520,7 @@
             });
         }
 
-        function setupTestData(testCase) {
+        async function setupTestData(testCase) {
             const sheetName = testCase.sheet;
 
             // Ensure sheet exists
@@ -520,13 +558,13 @@
             computationEngine.clearCache();
         }
 
-        function runTest(testCase) {
-            setupTestData(testCase);
+        async function runTest(testCase) {
+            await setupTestData(testCase);
 
             const sheetName = testCase.sheet;
             const cellId = testCase.cell;
             const formula = testCase.formula;
-            const expected = testCase.expected;
+            let expected = testCase.expected;
 
             let actual;
 
@@ -535,11 +573,11 @@
                 const cell = sheet.cells.find(c => c.cell === cellId);
 
                 if (cell && cell.data) {
-                    actual = computationEngine.computeCellValue(sheetName, cell);
+                    actual = await computationEngine.computeCellValue(sheetName, cell);
                 } else {
                     // Direct formula evaluation
                     if (formula.startsWith('=')) {
-                        actual = computationEngine.computeValue(sheetName, cellId, formula);
+                        actual = await computationEngine.computeValue(sheetName, cellId, formula);
                     } else {
                         actual = formula;
                     }
@@ -548,9 +586,6 @@
                 // Format for comparison
                 if (typeof actual === 'number') {
                     actual = Math.round(actual * 100) / 100;
-                }
-                if (typeof expected === 'number') {
-                    expected = Math.round(expected * 100) / 100;
                 }
 
             } catch (error) {
@@ -571,12 +606,12 @@
             };
         }
 
-        function runAllTests() {
+        async function runAllTests() {
             initializeTestEnvironment();
             testResults = [];
 
             for (const testCase of testCases) {
-                const result = runTest(testCase);
+                const result = await runTest(testCase);
                 testResults.push(result);
             }
 
@@ -595,7 +630,7 @@
             });
 
             if (filteredResults.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No tests to display</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No tests to display<\/td><\/tr>';
                 return;
             }
 
@@ -603,19 +638,19 @@
                 const row = document.createElement('tr');
                 row.className = result.passed ? 'pass' : 'fail';
 
-                let formulaDisplay = `<code>${escapeHtml(result.formula)}</code>`;
+                let formulaDisplay = `<code>${escapeHtml(result.formula)}<\/code>`;
                 if (result.description) {
-                    formulaDisplay += `<div class="test-description">📝 ${escapeHtml(result.description)}</div>`;
+                    formulaDisplay += `<div class="test-description">📝 ${escapeHtml(result.description)}<\/div>`;
                 }
 
                 row.innerHTML = `
-                    <td>${result.id}</td>
-                    <td>${escapeHtml(result.name)}</td>
-                    <td>${escapeHtml(result.sheet)}</td>
-                    <td>${formulaDisplay}</td>
-                    <td><code>${escapeHtml(result.expected)}</code></td>
-                    <td><code>${escapeHtml(result.actual)}</code></td>
-                    <td>${result.passed ? '✅ PASS' : '❌ FAIL'}</td>
+                    <td>${result.id}<\/td>
+                    <td>${escapeHtml(result.name)}<\/td>
+                    <td>${escapeHtml(result.sheet)}<\/td>
+                    <td>${formulaDisplay}<\/td>
+                    <td><code>${escapeHtml(result.expected)}<\/code><\/td>
+                    <td><code>${escapeHtml(result.actual)}<\/code><\/td>
+                    <td>${result.passed ? '✅ PASS' : '❌ FAIL'}<\/td>
                 `;
 
                 tbody.appendChild(row);
@@ -710,12 +745,18 @@
             });
         }
 
+        // Make functions global for button access
+        window.runAllTests = runAllTests;
+        window.showAll = showAll;
+        window.showFailed = showFailed;
+        window.showPassed = showPassed;
+        window.copyFailedReport = copyFailedReport;
+        window.copyFullReport = copyFullReport;
+
         // Auto-run tests on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                runAllTests();
-            }, 500);
-        });
+        setTimeout(() => {
+            runAllTests();
+        }, 500);
     </script>
 </body>
 </html>

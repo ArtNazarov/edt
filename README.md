@@ -6,7 +6,7 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 
 ![UI](https://dl.dropbox.com/scl/fi/4mk968mznp8w3fyzxrfd0/_20260331_211514.png?rlkey=n1ox5zigg7hxecbjc6nl2u8lr&st=6yladcoe)
 
-![Tests](https://dl.dropbox.com/scl/fi/vvj660ptyqiab597h4qro/sumproduct_test.png?rlkey=pagckitohaibwb1mjpe77shqs&st=zuraol74)
+![Tests](https://dl.dropbox.com/scl/fi/ra9espm550lnagbgltbf4/vlookup.png?rlkey=wpscbb22e3igtnbhim0990aom&st=x2ehzx85)
 
 ## Features
 
@@ -14,7 +14,7 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 - **Multiple Sheets:** Supports multiple worksheets with independent data
 - **Formula Support:**
   - Basic arithmetic expressions (+, -, *, /)
-  - Spreadsheet functions: SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT
+  - Spreadsheet functions: SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT, VLOOKUP
   - Cell references (e.g., `A1`, `B2`, `ZZ14`)
   - Range references (e.g., `A1:C3`)
   - Cross-sheet references (e.g., `first.A1`, `second.B3`)
@@ -188,6 +188,113 @@ Multiplies corresponding components in the given arrays and returns the sum of t
 
 ---
 
+#### VLOOKUP
+Looks up a value in the first column of a table and returns a value in the same row from a specified column.
+
+```
+=VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])
+```
+
+**Arguments:**
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `lookup_value` | The value to search for in the first column of the table | Yes |
+| `table_array` | The range of cells that contains the lookup table | Yes |
+| `col_index_num` | The column number in the table from which to return a value (1-indexed) | Yes |
+| `range_lookup` | Optional. TRUE = approximate match (default), FALSE = exact match | No |
+
+**Key Features:**
+- **Exact Match (FALSE/0):** Finds exact match, returns #N/A if not found
+- **Approximate Match (TRUE/1):** Finds closest match (requires first column sorted ascending)
+- **Cross-Sheet Support:** Can reference tables from other sheets
+- **Case-Insensitive:** String matching is case-insensitive
+- **Type Handling:** Properly handles numbers, strings, and mixed types
+
+**Examples:**
+
+| Formula | Description | Result |
+|---------|-------------|--------|
+| `=VLOOKUP("Product B", A1:B3, 2, FALSE)` | Exact match for Product B | Returns 200 |
+| `=VLOOKUP(85, A1:B6, 2, TRUE)` | Approximate match for grade | Returns "B" |
+| `=VLOOKUP(A1, prices.A1:B100, 2, FALSE)` | Cross-sheet exact lookup | Returns price |
+| `=VLOOKUP(D1, inventory.A1:C500, 3, TRUE)` | Approximate match with default | Returns closest match |
+
+**Practical Examples:**
+
+```excel
+' Product Price Lookup (Exact Match)
+=VLOOKUP("PRD-001", A1:B100, 2, FALSE)
+
+' Grade Assignment (Approximate Match)
+' Table: 0=F, 60=D, 70=C, 80=B, 90=A
+=VLOOKUP(85, A1:B6, 2, TRUE)  ' Returns "B"
+
+' Employee Directory
+=VLOOKUP(emp_id, employees.A1:F1000, 4, FALSE)
+
+' Tax Bracket Calculation
+=VLOOKUP(income, tax_table.A1:B5, 2, TRUE) * income
+
+' Commission Rate Lookup
+=VLOOKUP(sales_amount, commission_rates.A1:B10, 2, TRUE)
+```
+
+**Lookup Behavior:**
+
+| Match Type | Behavior | When to Use | Sorted Required |
+|------------|----------|-------------|-----------------|
+| FALSE (Exact) | Finds exact match only, returns #N/A if not found | Product codes, IDs, exact strings | No |
+| TRUE (Approx) | Finds largest value ≤ lookup_value | Grades, tax brackets, tiers | Yes (ascending) |
+
+**Example Tables:**
+
+**Grade Lookup Table (Approximate Match):**
+| A | B |
+|---|---|
+| 0 | F |
+| 60 | D |
+| 70 | C |
+| 80 | B |
+| 90 | A |
+
+```javascript
+=VLOOKUP(85, A1:B6, 2, TRUE)  // Returns "B"
+```
+
+**Product Catalog (Exact Match):**
+| A | B | C |
+|---|---|---|
+| SKU | Product | Price |
+| A100 | Laptop | 999 |
+| B200 | Mouse | 25 |
+| C300 | Keyboard | 75 |
+
+```javascript
+=VLOOKUP("B200", A1:C4, 3, FALSE)  // Returns 25
+```
+
+**Error Messages:**
+
+| Error | Cause |
+|-------|-------|
+| `#ERROR: VLOOKUP requires at least 3 arguments` | Missing required arguments |
+| `#ERROR: Invalid column index number` | Column index < 1 or not a number |
+| `#ERROR: Invalid table range` | Table array is not a valid range |
+| `#ERROR: Column index exceeds table width` | Column number > table columns |
+| `#N/A` | No exact match found (range_lookup=FALSE) |
+
+**Use Cases:**
+- **Price Lookup:** Find product prices from a catalog
+- **Employee Directory:** Retrieve employee information by ID
+- **Grade Calculation:** Assign letter grades from numeric scores
+- **Tax Brackets:** Calculate tax rates based on income levels
+- **Commission Rates:** Determine commission percentages from sales tiers
+- **Inventory Management:** Look up product details by SKU
+- **Data Validation:** Verify if values exist in reference tables
+
+---
+
 ### Cell References
 
 #### Single Cell Reference
@@ -225,6 +332,7 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 =SUM(first.A1:first.C3)         // Sum range in "first" sheet
 =AVG(compute_avg.C17:E17)       // Average range in "compute_avg" sheet
 =SUMPRODUCT(first.A1:A5, second.B1:B5)  // SUMPRODUCT across sheets
+=VLOOKUP(A1, prices.A1:B100, 2, FALSE)  // VLOOKUP across sheets
 ```
 
 #### Mixed Cross-Sheet Expressions
@@ -233,6 +341,7 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 =(first.A1 + second.B2) * AVG(C1:C10)   // Complex cross-sheet formula
 =SUM(first.A1:first.A5) + MAX(second.B1:second.B5)
 =SUMPRODUCT(first.A1:A3, second.B1:B3, third.C1:C3)  // Multi-sheet product
+=VLOOKUP(D1, inventory.A1:C500, 3, FALSE)  // VLOOKUP with cross-sheet table
 ```
 
 ---
@@ -247,6 +356,7 @@ Functions and operators can be combined for complex calculations.
 =SUM(A1:A10) / COUNT(A1:A10)    // Manual average calculation
 =MAX(A1:A10) - MIN(A1:A10)      // Range spread
 =SUMPRODUCT(A1:A5, B1:B5) / SUM(B1:B5)  // Weighted average
+=IF(ISNA(VLOOKUP(A1, B1:C10, 2, FALSE)), "Not found", VLOOKUP(A1, B1:C10, 2, FALSE))
 ```
 
 ---
@@ -259,6 +369,7 @@ Functions and operators can be combined for complex calculations.
 =AVG(B1:B12)              // Monthly average
 =SUM(C1:C12) * 0.15       // 15% of total
 =SUMPRODUCT(A1:A12, B1:B12)  // Weighted portfolio return
+=VLOOKUP(invoice_id, prices.A1:B100, 2, FALSE)  // Price lookup
 ```
 
 #### Data Analysis
@@ -267,6 +378,7 @@ Functions and operators can be combined for complex calculations.
 =AVG(A1:A100)                   // Mean value
 =COUNT(A1:A100)                 // Sample size
 =SUMPRODUCT((A1:A100>50), B1:B100)  // Sum of values where condition met
+=VLOOKUP(employee_id, employees.A1:F500, 4, FALSE)  // Employee data lookup
 ```
 
 #### Cross-Sheet Reporting
@@ -275,6 +387,7 @@ Functions and operators can be combined for complex calculations.
 =AVG(compute_avg.C17:E17)
 =first.A1 * second.B1           // Multiply values from different sheets
 =SUMPRODUCT(first.A1:A5, second.B1:B5)  // Cross-sheet weighted sum
+=VLOOKUP(A1, sales_data.A1:C1000, 3, FALSE)  // Cross-sheet lookup
 ```
 
 #### Engineering & Scientific
@@ -282,6 +395,7 @@ Functions and operators can be combined for complex calculations.
 =SUMPRODUCT(A1:A3, B1:B3)       // Dot product of two vectors
 =SUMPRODUCT(A1:A3, B1:B3, C1:C3)  // Triple product for volume
 =SUMPRODUCT(weights, values) / SUM(weights)  // Weighted average
+=VLOOKUP(material_id, material_properties.A1:D500, 4, FALSE)  // Material lookup
 ```
 
 ---
@@ -293,6 +407,7 @@ The application follows a clean MVC-like architecture with separate concerns:
 ### Components
 
 - **FormulaEngine:** Parses and evaluates spreadsheet formulas, handles cell references and ranges, supports cross-sheet references, caches computed values, detects errors.
+- **FunctionRegistry:** Dynamically loads spreadsheet functions from separate modules, supports lazy loading and caching.
 - **DataHolder:** Stores all sheet data including sheet names, cells, and viewport positions. Provides methods for getting/setting sheet data.
 - **ViewModel:** Provides computed properties for the current view state, manages formula display mode, handles boundary checking.
 - **SheetView:** Renders the current viewport as an HTML table, converts column indices to letters, attaches edit event listeners, escapes HTML.
@@ -305,24 +420,33 @@ The application follows a clean MVC-like architecture with separate concerns:
 ## File Structure
 
 ```
-edt.html          # Main HTML file with UI structure
-edt.css           # Styles for the table, navigation, and controls
-edt.js            # All JavaScript classes and application logic
-README.md         # This documentation
-test.html         # Test suite for AST Computation Engine (includes SUMPRODUCT tests)
+/
+├── edt.html          # Main HTML file with UI structure
+├── edt.css           # Styles for the table, navigation, and controls
+├── edt.js            # Core engine with AST parser and dynamic function loader
+├── test.html         # Comprehensive test suite (33+ test cases)
+├── README.md         # This documentation
+└── functions/        # Modular spreadsheet function implementations
+    ├── sum.js        # SUM function
+    ├── avg.js        # AVG function
+    ├── max.js        # MAX function
+    ├── min.js        # MIN function
+    ├── count.js      # COUNT function
+    ├── sumproduct.js # SUMPRODUCT function
+    └── vlookup.js    # VLOOKUP function
 ```
 
 ---
 
 ## Usage
 
-1. **Open:** Open `edt.html` in a modern web browser.
+1. **Open:** Open `edt.html` in a modern web browser (requires HTTP server for module loading)
 2. **Mode Switching:**
    - Click **"Switch to Input Formulas Mode"** to view/edit formulas.
    - Click **"Switch to Compute Results Mode"** to see calculated values.
 3. **Editing Cells:**
    - Click any cell to edit its content.
-   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`, `=SUMPRODUCT(A1:A5, B1:B5)`).
+   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`, `=SUMPRODUCT(A1:A5, B1:B5)`, `=VLOOKUP(D1, A1:B10, 2, FALSE)`).
    - Press Tab or click elsewhere to save.
 4. **Navigation:**
    - Use the navigation buttons to move the viewport.
@@ -353,10 +477,18 @@ Cell data is stored in memory in the `DataHolder` object. Example data included:
 - E3: `=first.C2 + 50` → `90` (cross-sheet reference)
 - F3: `=SUM(first.A2:first.A4)` → `60.5`
 
-**SumProduct Test Sheet:**
-- C1: `5`, C2: `1`
-- D1: `8`, D2: `7`
-- E1: `=SUMPRODUCT(C1:C2, D1:D2)` → `47`
+**SumProduct Sheet:**
+- A1: `2`, A2: `3`
+- B1: `4`, B2: `5`
+- C1: `6`, C2: `7`
+- E2: `=SUMPRODUCT(A1:A2, B1:B2, C1:C2)` → `153`
+
+**VLOOKUP Sheet:**
+- A1: `"Product A"`, B1: `100`
+- A2: `"Product B"`, B2: `200`
+- A3: `"Product C"`, B3: `300`
+- D1: `"Product B"`
+- E1: `=VLOOKUP(D1, A1:B3, 2, FALSE)` → `200`
 
 *Empty cells are not stored to optimize memory usage.*
 
@@ -373,6 +505,10 @@ The formula engine includes robust error handling:
 | Division by Zero | `0` | Returns 0 instead of error |
 | Missing Cell | `0` | Empty or non-existent cells return 0 |
 | SUMPRODUCT Dimension Mismatch | `#ERROR: SUMPRODUCT ranges must have the same size` | Ranges have different numbers of cells |
+| VLOOKUP Invalid Arguments | `#ERROR: VLOOKUP requires at least 3 arguments` | Missing required parameters |
+| VLOOKUP Invalid Column | `#ERROR: Invalid column index number` | Column index < 1 or not numeric |
+| VLOOKUP Column Out of Range | `#ERROR: Column index exceeds table width` | Column number > table columns |
+| VLOOKUP No Match | `#N/A` | Exact match not found |
 
 Error cells are highlighted in red in Results Mode for easy identification. Console logs provide detailed error information.
 
@@ -388,7 +524,8 @@ Error cells are highlighted in red in Results Mode for easy identification. Cons
 - **Decimal Handling:** All numeric results are rounded to 2 decimal places to avoid floating-point precision issues.
 - **HTML Escaping:** Prevents XSS attacks by escaping special characters.
 - **Cross-Sheet References:** Format: `sheetname.cell` (e.g., `first.A1`).
-- **SUMPRODUCT Implementation:** Supports 2+ ranges with dimension validation and proper product summation.
+- **Dynamic Module Loading:** Functions are loaded on-demand using ES6 dynamic imports.
+- **Modular Architecture:** Each spreadsheet function is in its own file for maintainability.
 
 ---
 
@@ -396,7 +533,7 @@ Error cells are highlighted in red in Results Mode for easy identification. Cons
 
 The application includes a comprehensive test suite (`test.html`) that validates all formula functionality:
 
-- **31+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, and SUMPRODUCT
+- **33+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, SUMPRODUCT, and VLOOKUP
 - **SUMPRODUCT Tests:**
   - Basic two-range multiplication
   - Three-range multiplication
@@ -404,10 +541,13 @@ The application includes a comprehensive test suite (`test.html`) that validates
   - Cross-sheet references
   - Single-row ranges
   - Empty cell handling
+- **VLOOKUP Tests:**
+  - Exact match with value found
+  - Exact match with value not found (#N/A)
 - **Visual Test Results** with pass/fail indicators
 - **Report Generation** for failed tests
 
-Run `test.html` in any modern browser to validate the formula engine.
+Run `test.html` in a local HTTP server to validate the formula engine.
 
 ---
 
@@ -425,7 +565,14 @@ Free to use and modify, MIT License
 
 ## Version History
 
-### v1.2.0 (Current)
+### v1.3.0 (Current)
+- Added VLOOKUP function with exact and approximate match support
+- Implemented dynamic module loading for all spreadsheet functions
+- Refactored codebase into modular architecture with separate function files
+- Added comprehensive VLOOKUP test cases
+- Enhanced error handling for VLOOKUP operations
+
+### v1.2.0
 - Added SUMPRODUCT function with support for 2+ ranges
 - Enhanced cross-sheet reference support for SUMPRODUCT
 - Added comprehensive SUMPRODUCT test cases

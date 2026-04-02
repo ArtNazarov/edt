@@ -1,5 +1,5 @@
-// edt.js - Fixed version with proper decimal handling and bug fixes
-// Added SUMPRODUCT function support for range multiplication and summation
+// edt.js - Refactored with dynamic function loading
+// Core engine without hardcoded spreadsheet functions
 
 // ==================== AST Node Types ====================
 class ASTNode {
@@ -184,6 +184,68 @@ class FormulaParser {
     }
 }
 
+// ==================== Function Registry ====================
+class FunctionRegistry {
+    constructor() {
+        this.functions = new Map();
+        this.loadingPromises = new Map();
+        this.functionPathMap = {
+            'SUM': './functions/sum.js',
+            'AVG': './functions/avg.js',
+            'MAX': './functions/max.js',
+            'MIN': './functions/min.js',
+            'COUNT': './functions/count.js',
+            'SUMPRODUCT': './functions/sumproduct.js',
+            'VLOOKUP': './functions/vlookup.js'
+        };
+    }
+
+    async loadFunction(functionName) {
+        const upperName = functionName.toUpperCase();
+
+        // Check if already loaded
+        if (this.functions.has(upperName)) {
+            return this.functions.get(upperName);
+        }
+
+        // Check if currently loading
+        if (this.loadingPromises.has(upperName)) {
+            return this.loadingPromises.get(upperName);
+        }
+
+        // Get the file path
+        const filePath = this.functionPathMap[upperName];
+        if (!filePath) {
+            throw new Error(`Unknown function: ${upperName}`);
+        }
+
+        // Load the function module dynamically
+        const loadPromise = import(filePath)
+            .then(module => {
+                const fn = module.default;
+                this.functions.set(upperName, fn);
+                this.loadingPromises.delete(upperName);
+                return fn;
+            })
+            .catch(error => {
+                this.loadingPromises.delete(upperName);
+                console.error(`Failed to load function ${upperName}:`, error);
+                throw new Error(`Function ${upperName} not available: ${error.message}`);
+            });
+
+        this.loadingPromises.set(upperName, loadPromise);
+        return loadPromise;
+    }
+
+    isFunctionLoaded(functionName) {
+        return this.functions.has(functionName.toUpperCase());
+    }
+
+    getLoadedFunctions() {
+        return Array.from(this.functions.keys());
+    }
+}
+
 // ==================== AST Evaluator ====================
 class ASTEvaluator {
     constructor(dataHolder, currentSheet) {
@@ -191,6 +253,7 @@ class ASTEvaluator {
         this.currentSheet = currentSheet;
         this.cache = new Map();
         this.evaluationStack = new Set();
+        this.functionRegistry = new FunctionRegistry();
     }
 
     clearCache() {
@@ -198,7 +261,7 @@ class ASTEvaluator {
         this.evaluationStack.clear();
     }
 
-    evaluate(node, cellId = null) {
+    async evaluate(node, cellId = null) {
         if (!node) return 0;
 
         if (cellId && this.cache.has(cellId)) {
@@ -220,15 +283,15 @@ class ASTEvaluator {
                     break;
 
                 case 'cellRef':
-                    result = this.evaluateCellReference(node.value);
+                    result = await this.evaluateCellReference(node.value);
                     break;
 
                 case 'binaryOp':
-                    result = this.evaluateBinaryOp(node);
+                    result = await this.evaluateBinaryOp(node);
                     break;
 
                 case 'function':
-                    result = this.evaluateFunction(node);
+                    result = await this.evaluateFunction(node);
                     break;
 
                 default:
@@ -245,7 +308,7 @@ class ASTEvaluator {
         }
     }
 
-    evaluateCellReference(ref) {
+    async evaluateCellReference(ref) {
         let sheetName = this.currentSheet;
         let cellRef = ref;
 
@@ -269,7 +332,7 @@ class ASTEvaluator {
                 const tokens = FormulaTokenizer.tokenize(cellData.substring(1));
                 const parser = new FormulaParser(tokens);
                 const ast = parser.parse();
-                const result = evaluator.evaluate(ast, `${sheetName}!${cellRef}`);
+                const result = await evaluator.evaluate(ast, `${sheetName}!${cellRef}`);
                 return result;
             } catch (e) {
                 console.error(`Error evaluating ${cellData}:`, e);
@@ -279,16 +342,15 @@ class ASTEvaluator {
 
         const num = parseFloat(cellData);
         if (!isNaN(num) && isFinite(num) && cellData.trim() !== '') {
-            // Round to 2 decimal places to avoid floating point issues
             return Math.round(num * 100) / 100;
         }
 
         return cellData;
     }
 
-    evaluateBinaryOp(node) {
-        const left = this.evaluate(node.left);
-        const right = this.evaluate(node.right);
+    async evaluateBinaryOp(node) {
+        const left = await this.evaluate(node.left);
+        const right = await this.evaluate(node.right);
 
         if (typeof left === 'number' && typeof right === 'number') {
             let result;
@@ -299,7 +361,6 @@ class ASTEvaluator {
                 case '/': result = right !== 0 ? left / right : 0; break;
                 default: result = 0;
             }
-            // Round to 2 decimal places to avoid floating point issues
             return Math.round(result * 100) / 100;
         }
 
@@ -310,118 +371,54 @@ class ASTEvaluator {
         return 0;
     }
 
-    evaluateFunction(node) {
-        // Handle SUMPRODUCT specially - it requires paired ranges
-        if (node.value === 'SUMPRODUCT') {
-            return this.evaluateSumProduct(node);
-        }
+    async evaluateFunction(node) {
+        const functionName = node.value;
 
-        // For other functions, collect all numeric values
-        const values = [];
+        try {
+            // Load the function dynamically
+            const fn = await this.functionRegistry.loadFunction(functionName);
 
-        for (const arg of node.args) {
-            if (arg.type === 'range') {
-                const rangeValues = this.evaluateRange(arg.start, arg.end);
-                values.push(...rangeValues);
-            } else if (arg.type === 'expression') {
-                const val = this.evaluate(arg.value);
-                if (typeof val === 'number' && !isNaN(val)) {
-                    values.push(val);
-                }
+            // Create a context object with helper methods
+            const context = {
+                evaluateRange: async (startNode, endNode) => {
+                    return await this.evaluateRange(startNode, endNode);
+                },
+                evaluate: async (argNode) => {
+                    return await this.evaluate(argNode);
+                },
+                evaluateCellReference: async (ref) => {
+                    return await this.evaluateCellReference(ref);
+                },
+                getSheet: (sheetName) => {
+                    return this.dataHolder.getSheet(sheetName);
+                },
+                currentSheet: this.currentSheet,
+                dataHolder: this.dataHolder,
+                formatNumber: (num) => {
+                    if (typeof num !== 'number') return num;
+                    if (Number.isInteger(num)) return num;
+                    return Math.round(num * 100) / 100;
+                },
+                columnToNumber: (col) => this.columnToNumber(col),
+                numberToColumn: (num) => this.numberToColumn(num)
+            };
+
+            // Execute the function with node args and context
+            const result = await fn(node.args, context);
+
+            // Format numeric results
+            if (typeof result === 'number' && !isNaN(result)) {
+                return Math.round(result * 100) / 100;
             }
-        }
+            return result;
 
-        let result;
-        switch (node.value) {
-            case 'SUM':
-                result = values.reduce((a, b) => a + b, 0);
-                break;
-            case 'AVG':
-                if (values.length === 0) result = 0;
-                else {
-                    const sum = values.reduce((a, b) => a + b, 0);
-                    result = sum / values.length;
-                }
-                break;
-            case 'MAX':
-                result = values.length > 0 ? Math.max(...values) : 0;
-                break;
-            case 'MIN':
-                result = values.length > 0 ? Math.min(...values) : 0;
-                break;
-            case 'COUNT':
-                result = values.length;
-                break;
-            default:
-                result = 0;
+        } catch (error) {
+            console.error(`Error evaluating function ${functionName}:`, error);
+            return `#ERROR: ${error.message}`;
         }
-        // Round to 2 decimal places
-        return Math.round(result * 100) / 100;
     }
 
-    evaluateSumProduct(node) {
-        // SUMPRODUCT requires an even number of arguments, typically ranges
-        // Each pair of ranges is multiplied element-wise and summed
-        const args = node.args;
-
-        if (args.length < 2) {
-            return '#ERROR: SUMPRODUCT requires at least two ranges';
-        }
-
-        // Parse each argument into an array of numeric values
-        const argValues = [];
-
-        for (const arg of args) {
-            const values = [];
-            if (arg.type === 'range') {
-                const rangeValues = this.evaluateRange(arg.start, arg.end);
-                values.push(...rangeValues);
-            } else if (arg.type === 'expression') {
-                const val = this.evaluate(arg.value);
-                if (typeof val === 'number' && !isNaN(val)) {
-                    values.push(val);
-                }
-            } else {
-                return '#ERROR: SUMPRODUCT arguments must be ranges';
-            }
-            argValues.push(values);
-        }
-
-        // Check that all arguments have the same length
-        const firstLength = argValues[0].length;
-        for (let i = 1; i < argValues.length; i++) {
-            if (argValues[i].length !== firstLength) {
-                return '#ERROR: SUMPRODUCT ranges must have the same size';
-            }
-        }
-
-        // If we have an odd number of arguments, treat them as pairs
-        // If even number, pair them sequentially
-        let total = 0;
-
-        if (argValues.length === 2) {
-            // Standard case: two ranges multiplied element-wise
-            for (let i = 0; i < firstLength; i++) {
-                total += argValues[0][i] * argValues[1][i];
-            }
-        } else {
-            // For more than 2 arguments, we need to handle proper pairing
-            // According to Excel: =SUMPRODUCT(A1:A5, B1:B5, C1:C5) = A1*B1*C1 + ... + A5*B5*C5
-            // So we multiply across all arguments for each position
-            for (let i = 0; i < firstLength; i++) {
-                let product = argValues[0][i];
-                for (let j = 1; j < argValues.length; j++) {
-                    product *= argValues[j][i];
-                }
-                total += product;
-            }
-        }
-
-        // Round to 2 decimal places
-        return Math.round(total * 100) / 100;
-    }
-
-    evaluateRange(startNode, endNode) {
+    async evaluateRange(startNode, endNode) {
         const startRef = startNode.value;
         const endRef = endNode.value;
 
@@ -460,7 +457,7 @@ class ASTEvaluator {
             for (let col = startCol; col <= endCol; col++) {
                 const cellRef = this.numberToColumn(col) + row;
                 const fullRef = sheetPrefix ? sheetPrefix + cellRef : cellRef;
-                const val = this.evaluateCellReference(fullRef);
+                const val = await this.evaluateCellReference(fullRef);
                 if (typeof val === 'number' && !isNaN(val)) {
                     values.push(val);
                 }
@@ -518,14 +515,14 @@ class ComputationEngine {
         }
     }
 
-    computeValue(sheetName, cellId, formula) {
+    async computeValue(sheetName, cellId, formula) {
         try {
             const evaluator = this.getEvaluator(sheetName);
             const expression = formula.substring(1).trim();
             const tokens = FormulaTokenizer.tokenize(expression);
             const parser = new FormulaParser(tokens);
             const ast = parser.parse();
-            const result = evaluator.evaluate(ast, `${sheetName}!${cellId}`);
+            const result = await evaluator.evaluate(ast, `${sheetName}!${cellId}`);
             if (typeof result === 'number' && !isNaN(result)) {
                 return evaluator.formatNumber(result);
             }
@@ -536,12 +533,12 @@ class ComputationEngine {
         }
     }
 
-    computeCellValue(sheetName, cell) {
+    async computeCellValue(sheetName, cell) {
         if (!cell || !cell.data) return '';
         const dataStr = cell.data.toString();
 
         if (dataStr.startsWith('=')) {
-            return this.computeValue(sheetName, cell.cell, dataStr);
+            return await this.computeValue(sheetName, cell.cell, dataStr);
         }
 
         const num = parseFloat(dataStr);
@@ -584,19 +581,33 @@ class DataHolder {
                     {"cell": "F3", "data": "=SUM(first.A2:first.A4)"}
                 ]
             },
-          "sumproduct": {
-                    start_row: 1,
-                    start_col: 1,
-                    cells: [
-                        {"cell": "A1", "data": "2"},
-                        {"cell": "A2", "data": "3"},
-                        {"cell": "B1", "data": "4"},
-                        {"cell": "B2", "data": "5"},
-                        {"cell": "C1", "data": "6"},
-                        {"cell": "C2", "data": "7"},
-                        {"cell": "E2", "data": "=SUMPRODUCT(A1:A2, B1:B2, C1:C2)"}
-                    ]
-                }
+            "sumproduct": {
+                start_row: 1,
+                start_col: 1,
+                cells: [
+                    {"cell": "A1", "data": "2"},
+                    {"cell": "A2", "data": "3"},
+                    {"cell": "B1", "data": "4"},
+                    {"cell": "B2", "data": "5"},
+                    {"cell": "C1", "data": "6"},
+                    {"cell": "C2", "data": "7"},
+                    {"cell": "E2", "data": "=SUMPRODUCT(A1:A2, B1:B2, C1:C2)"}
+                ]
+            },
+            "vlookup": {
+                start_row: 1,
+                start_col: 1,
+                cells: [
+                    {"cell": "A1", "data": "Product A"},
+                    {"cell": "B1", "data": "100"},
+                    {"cell": "A2", "data": "Product B"},
+                    {"cell": "B2", "data": "200"},
+                    {"cell": "A3", "data": "Product C"},
+                    {"cell": "B3", "data": "300"},
+                    {"cell": "D1", "data": "Product B"},
+                    {"cell": "E1", "data": "=VLOOKUP(D1, A1:B3, 2, FALSE)"}
+                ]
+            }
         };
         this.currentSheet = 'first';
     }
@@ -670,12 +681,12 @@ class ViewModel {
     canMoveLeft() { return this.getStartCol() > 1; }
     canMoveRight() { return this.getStartCol() < this.MAX_COL_INDEX - this.VIEWPORT_WIDTH_COLS + 1; }
 
-    getDisplayValue(cellData) {
+    async getDisplayValue(cellData) {
         if (!cellData || !cellData.data) return '';
         if (this.showFormulas) return cellData.data;
 
         if (cellData.data.toString().startsWith('=')) {
-            return this.computationEngine.computeCellValue(this.sheetName, cellData);
+            return await this.computationEngine.computeCellValue(this.sheetName, cellData);
         }
         return cellData.data;
     }
@@ -701,7 +712,7 @@ class SheetView {
         return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
-    render() {
+    async render() {
         const start_row = this.viewModel.getStartRow(), start_col = this.viewModel.getStartCol();
         const end_row = this.viewModel.getEndRow(), end_col = this.viewModel.getEndCol();
         const cells = this.viewModel.getCells();
@@ -716,7 +727,7 @@ class SheetView {
             for (let col = start_col; col <= end_col; col++) {
                 const cellId = this.getColumnLetter(col) + row;
                 const cellData = cells.find(item => item.cell === cellId);
-                const displayValue = this.viewModel.getDisplayValue(cellData);
+                const displayValue = await this.viewModel.getDisplayValue(cellData);
                 const isFormula = cellData && cellData.data && cellData.data.toString().startsWith('=');
                 const cellClass = (showFormulas && isFormula) ? 'cell-formula' : '';
                 const hasError = !showFormulas && displayValue && displayValue.toString().startsWith('#ERROR');
@@ -734,10 +745,10 @@ class SheetView {
         const editableCells = this.container.querySelectorAll('td[contenteditable="true"]');
         editableCells.forEach(cell => {
             cell.removeEventListener('blur', this.handleBlur);
-            this.handleBlur = (event) => {
+            this.handleBlur = async (event) => {
                 const cellId = event.target.getAttribute('data-cell');
                 const newValue = event.target.textContent;
-                if (this.onCellEdit) this.onCellEdit(cellId, newValue);
+                if (this.onCellEdit) await this.onCellEdit(cellId, newValue);
             };
             cell.addEventListener('blur', this.handleBlur);
         });
@@ -762,7 +773,7 @@ class NavButtonsController {
 // ==================== CellsEditablesController ====================
 class CellsEditablesController {
     constructor(dataHolder, computationEngine) { this.dataHolder = dataHolder; this.computationEngine = computationEngine; }
-    handleCellEdit(sheetName, cellId, newValue) {
+    async handleCellEdit(sheetName, cellId, newValue) {
         this.dataHolder.updateCell(sheetName, cellId, newValue);
         this.computationEngine.clearCache(sheetName);
     }
@@ -787,18 +798,18 @@ class AppController {
         this.updateModeButtons();
     }
 
-    updateViewAndViewModel() {
+    async updateViewAndViewModel() {
         this.viewModel = new ViewModel(this.dataHolder, this.dataHolder.currentSheet, this.computationEngine, this.showFormulas);
-        this.sheetView = new SheetView('table-container', this.viewModel, (cellId, newValue) => {
-            this.cellsController.handleCellEdit(this.dataHolder.currentSheet, cellId, newValue);
-            this.updateViewAndViewModel();
+        this.sheetView = new SheetView('table-container', this.viewModel, async (cellId, newValue) => {
+            await this.cellsController.handleCellEdit(this.dataHolder.currentSheet, cellId, newValue);
+            await this.updateViewAndViewModel();
             this.updatePositionInfo();
         });
-        this.navController = new NavButtonsController(this.dataHolder, this.viewModel, () => {
-            this.updateViewAndViewModel();
+        this.navController = new NavButtonsController(this.dataHolder, this.viewModel, async () => {
+            await this.updateViewAndViewModel();
             this.updatePositionInfo();
         });
-        this.sheetView.render();
+        await this.sheetView.render();
     }
 
     renderSheetsNav() {
@@ -808,15 +819,15 @@ class AppController {
             const link = document.createElement('span');
             link.className = `sheet-link ${this.dataHolder.currentSheet === sheetName ? 'active' : ''}`;
             link.textContent = sheetName;
-            link.onclick = () => this.switchSheet(sheetName);
+            link.onclick = async () => await this.switchSheet(sheetName);
             nav.appendChild(link);
         });
     }
 
-    switchSheet(sheetName) {
+    async switchSheet(sheetName) {
         this.dataHolder.setCurrentSheet(sheetName);
         this.renderSheetsNav();
-        this.updateViewAndViewModel();
+        await this.updateViewAndViewModel();
         this.updatePositionInfo();
     }
 
@@ -834,8 +845,8 @@ class AppController {
     attachModeButtonHandlers() {
         const formulasBtn = document.getElementById('formulas-mode-btn');
         const resultsBtn = document.getElementById('results-mode-btn');
-        if (formulasBtn) formulasBtn.addEventListener('click', () => { this.showFormulas = true; this.updateViewAndViewModel(); this.updateModeButtons(); this.updatePositionInfo(); });
-        if (resultsBtn) resultsBtn.addEventListener('click', () => { this.showFormulas = false; this.updateViewAndViewModel(); this.updateModeButtons(); this.updatePositionInfo(); });
+        if (formulasBtn) formulasBtn.addEventListener('click', async () => { this.showFormulas = true; await this.updateViewAndViewModel(); this.updateModeButtons(); this.updatePositionInfo(); });
+        if (resultsBtn) resultsBtn.addEventListener('click', async () => { this.showFormulas = false; await this.updateViewAndViewModel(); this.updateModeButtons(); this.updatePositionInfo(); });
     }
 
     updateModeButtons() {
