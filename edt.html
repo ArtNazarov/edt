@@ -51,6 +51,7 @@
     <div id="table-container"></div>
     <div id="sheets-nav" class="sheets"></div>
     <div id="position-info"></div>
+
     <div class="controls">
         <button onclick="moveToTop()">Move to top</button>
         <button onclick="moveToBottom()">Move to bottom</button>
@@ -62,10 +63,12 @@
         <button onclick="stepLeft()">Step left</button>
         <button onclick="stepRight()">Step right</button>
     </div>
+
     <div class="mode-controls">
         <button id="formulas-mode-btn" class="mode-btn active">Switch to Input Formulas Mode</button>
         <button id="results-mode-btn" class="mode-btn">Switch to Compute Results Mode</button>
     </div>
-    <script src="edt.js"></script>
+
+    <script src="edt.js" type="module"></script>
 </body>
 </html>

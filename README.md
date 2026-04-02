@@ -220,60 +220,6 @@ Looks up a value in the first column of a table and returns a value in the same 
 | `=VLOOKUP(A1, prices.A1:B100, 2, FALSE)` | Cross-sheet exact lookup | Returns price |
 | `=VLOOKUP(D1, inventory.A1:C500, 3, TRUE)` | Approximate match with default | Returns closest match |
 
-**Practical Examples:**
-
-```excel
-' Product Price Lookup (Exact Match)
-=VLOOKUP("PRD-001", A1:B100, 2, FALSE)
-
-' Grade Assignment (Approximate Match)
-' Table: 0=F, 60=D, 70=C, 80=B, 90=A
-=VLOOKUP(85, A1:B6, 2, TRUE)  ' Returns "B"
-
-' Employee Directory
-=VLOOKUP(emp_id, employees.A1:F1000, 4, FALSE)
-
-' Tax Bracket Calculation
-=VLOOKUP(income, tax_table.A1:B5, 2, TRUE) * income
-
-' Commission Rate Lookup
-=VLOOKUP(sales_amount, commission_rates.A1:B10, 2, TRUE)
-```
-
-**Lookup Behavior:**
-
-| Match Type | Behavior | When to Use | Sorted Required |
-|------------|----------|-------------|-----------------|
-| FALSE (Exact) | Finds exact match only, returns #N/A if not found | Product codes, IDs, exact strings | No |
-| TRUE (Approx) | Finds largest value ≤ lookup_value | Grades, tax brackets, tiers | Yes (ascending) |
-
-**Example Tables:**
-
-**Grade Lookup Table (Approximate Match):**
-| A | B |
-|---|---|
-| 0 | F |
-| 60 | D |
-| 70 | C |
-| 80 | B |
-| 90 | A |
-
-```javascript
-=VLOOKUP(85, A1:B6, 2, TRUE)  // Returns "B"
-```
-
-**Product Catalog (Exact Match):**
-| A | B | C |
-|---|---|---|
-| SKU | Product | Price |
-| A100 | Laptop | 999 |
-| B200 | Mouse | 25 |
-| C300 | Keyboard | 75 |
-
-```javascript
-=VLOOKUP("B200", A1:C4, 3, FALSE)  // Returns 25
-```
-
 **Error Messages:**
 
 | Error | Cause |
@@ -283,15 +229,6 @@ Looks up a value in the first column of a table and returns a value in the same 
 | `#ERROR: Invalid table range` | Table array is not a valid range |
 | `#ERROR: Column index exceeds table width` | Column number > table columns |
 | `#N/A` | No exact match found (range_lookup=FALSE) |
-
-**Use Cases:**
-- **Price Lookup:** Find product prices from a catalog
-- **Employee Directory:** Retrieve employee information by ID
-- **Grade Calculation:** Assign letter grades from numeric scores
-- **Tax Brackets:** Calculate tax rates based on income levels
-- **Commission Rates:** Determine commission percentages from sales tiers
-- **Inventory Management:** Look up product details by SKU
-- **Data Validation:** Verify if values exist in reference tables
 
 ---
 
@@ -335,85 +272,47 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 =VLOOKUP(A1, prices.A1:B100, 2, FALSE)  // VLOOKUP across sheets
 ```
 
-#### Mixed Cross-Sheet Expressions
-```
-=first.A1 + second.B2                   // Add values from two sheets
-=(first.A1 + second.B2) * AVG(C1:C10)   // Complex cross-sheet formula
-=SUM(first.A1:first.A5) + MAX(second.B1:second.B5)
-=SUMPRODUCT(first.A1:A3, second.B1:B3, third.C1:C3)  // Multi-sheet product
-=VLOOKUP(D1, inventory.A1:C500, 3, FALSE)  // VLOOKUP with cross-sheet table
-```
-
----
-
-### Combined Expressions
-
-Functions and operators can be combined for complex calculations.
-
-```
-=SUM(A1:A5) + MAX(B1:B5) - 10
-=(first.A1 + second.B2) * AVG(C1:C10)
-=SUM(A1:A10) / COUNT(A1:A10)    // Manual average calculation
-=MAX(A1:A10) - MIN(A1:A10)      // Range spread
-=SUMPRODUCT(A1:A5, B1:B5) / SUM(B1:B5)  // Weighted average
-=IF(ISNA(VLOOKUP(A1, B1:C10, 2, FALSE)), "Not found", VLOOKUP(A1, B1:C10, 2, FALSE))
-```
-
----
-
-### Formula Examples by Use Case
-
-#### Financial Calculations
-```
-=SUM(A1:A12)              // Annual total
-=AVG(B1:B12)              // Monthly average
-=SUM(C1:C12) * 0.15       // 15% of total
-=SUMPRODUCT(A1:A12, B1:B12)  // Weighted portfolio return
-=VLOOKUP(invoice_id, prices.A1:B100, 2, FALSE)  // Price lookup
-```
-
-#### Data Analysis
-```
-=MAX(A1:A100) - MIN(A1:A100)    // Range spread
-=AVG(A1:A100)                   // Mean value
-=COUNT(A1:A100)                 // Sample size
-=SUMPRODUCT((A1:A100>50), B1:B100)  // Sum of values where condition met
-=VLOOKUP(employee_id, employees.A1:F500, 4, FALSE)  // Employee data lookup
-```
-
-#### Cross-Sheet Reporting
-```
-=SUM(first.A1:first.A10) + SUM(second.A1:second.A10)
-=AVG(compute_avg.C17:E17)
-=first.A1 * second.B1           // Multiply values from different sheets
-=SUMPRODUCT(first.A1:A5, second.B1:B5)  // Cross-sheet weighted sum
-=VLOOKUP(A1, sales_data.A1:C1000, 3, FALSE)  // Cross-sheet lookup
-```
-
-#### Engineering & Scientific
-```
-=SUMPRODUCT(A1:A3, B1:B3)       // Dot product of two vectors
-=SUMPRODUCT(A1:A3, B1:B3, C1:C3)  // Triple product for volume
-=SUMPRODUCT(weights, values) / SUM(weights)  // Weighted average
-=VLOOKUP(material_id, material_properties.A1:D500, 4, FALSE)  // Material lookup
-```
-
 ---
 
 ## Architecture
 
-The application follows a clean MVC-like architecture with separate concerns:
+The application follows a clean modular MVC-like architecture with separate concerns. The codebase is organized into three main directories:
 
-### Components
+### Core Components (`/classes`)
 
-- **FormulaEngine:** Parses and evaluates spreadsheet formulas, handles cell references and ranges, supports cross-sheet references, caches computed values, detects errors.
-- **FunctionRegistry:** Dynamically loads spreadsheet functions from separate modules, supports lazy loading and caching.
-- **DataHolder:** Stores all sheet data including sheet names, cells, and viewport positions. Provides methods for getting/setting sheet data.
-- **ViewModel:** Provides computed properties for the current view state, manages formula display mode, handles boundary checking.
-- **SheetView:** Renders the current viewport as an HTML table, converts column indices to letters, attaches edit event listeners, escapes HTML.
-- **NavButtonsController:** Handles all navigation button clicks, validates movements against grid boundaries.
-- **CellsEditablesController:** Handles cell edit events, updates cell data in the DataHolder.
-- **AppController:** Orchestrates all components, manages sheet switching, handles mode switching.
+| Class | Description |
+|-------|-------------|
+| `ASTNode` | Represents nodes in the Abstract Syntax Tree (numbers, cell references, binary operations, functions) |
+| `FormulaTokenizer` | Converts formula strings into tokens for parsing |
+| `FormulaParser` | Parses token streams into AST nodes following operator precedence |
+| `FunctionRegistry` | Dynamically loads spreadsheet functions from the `/functions` directory with caching |
+| `ASTEvaluator` | Evaluates AST nodes, handles cell references, ranges, and function execution |
+| `ComputationEngine` | Main entry point for formula computation, manages evaluator instances per sheet |
+| `DataHolder` | Stores all sheet data (cells, viewport positions) and provides CRUD operations |
+| `ViewModel` | Provides computed properties for view state (visible range, navigation capabilities) |
+| `SheetView` | Renders the 7x7 viewport as an HTML table with edit capabilities |
+| `NavButtonsController` | Handles viewport navigation button clicks with boundary validation |
+| `CellsEditablesController` | Manages cell edit events and triggers cache invalidation |
+| `AppController` | Orchestrates all components, manages mode switching and sheet navigation |
+
+### Spreadsheet Functions (`/functions`)
+
+| File | Function | Description |
+|------|----------|-------------|
+| `sum.js` | SUM | Sums all numeric values in a range |
+| `avg.js` | AVG | Calculates arithmetic mean |
+| `max.js` | MAX | Returns maximum value |
+| `min.js` | MIN | Returns minimum value |
+| `count.js` | COUNT | Counts numeric values |
+| `sumproduct.js` | SUMPRODUCT | Multiplies corresponding components and sums products |
+| `vlookup.js` | VLOOKUP | Looks up values in a table |
+
+### Testing (`/testing`)
+
+| File | Description |
+|------|-------------|
+| `tests.css` | Styles for the test suite interface |
+| `tests.js` | Test case definitions and execution logic (33+ tests) |
 
 ---
 
@@ -421,37 +320,62 @@ The application follows a clean MVC-like architecture with separate concerns:
 
 ```
 /
-├── edt.html          # Main HTML file with UI structure
-├── edt.css           # Styles for the table, navigation, and controls
-├── edt.js            # Core engine with AST parser and dynamic function loader
-├── test.html         # Comprehensive test suite (33+ test cases)
-├── README.md         # This documentation
-└── functions/        # Modular spreadsheet function implementations
-    ├── sum.js        # SUM function
-    ├── avg.js        # AVG function
-    ├── max.js        # MAX function
-    ├── min.js        # MIN function
-    ├── count.js      # COUNT function
-    ├── sumproduct.js # SUMPRODUCT function
-    └── vlookup.js    # VLOOKUP function
+├── edt.html              # Main application HTML
+├── edt.css               # Application styles
+├── edt.js                # Main entry point (dynamic class loader)
+├── test.html             # Test suite HTML (loads tests from /testing)
+├── README.md             # This documentation
+├── classes/              # Core application classes
+│   ├── ASTNode.js
+│   ├── FormulaTokenizer.js
+│   ├── FormulaParser.js
+│   ├── FunctionRegistry.js
+│   ├── ASTEvaluator.js
+│   ├── ComputationEngine.js
+│   ├── DataHolder.js
+│   ├── ViewModel.js
+│   ├── SheetView.js
+│   ├── NavButtonsController.js
+│   ├── CellsEditablesController.js
+│   └── AppController.js
+├── functions/            # Spreadsheet function implementations
+│   ├── sum.js
+│   ├── avg.js
+│   ├── max.js
+│   ├── min.js
+│   ├── count.js
+│   ├── sumproduct.js
+│   └── vlookup.js
+└── testing/              # Test suite files
+    ├── tests.css
+    └── tests.js
 ```
 
 ---
 
 ## Usage
 
-1. **Open:** Open `edt.html` in a modern web browser (requires HTTP server for module loading)
-2. **Mode Switching:**
+1. **Setup:** Start a local HTTP server in the project directory:
+   ```bash
+   python3 -m http.server 8000
+   ```
+
+2. **Open:** Navigate to `http://localhost:8000/edt.html` in a modern web browser.
+
+3. **Mode Switching:**
    - Click **"Switch to Input Formulas Mode"** to view/edit formulas.
    - Click **"Switch to Compute Results Mode"** to see calculated values.
-3. **Editing Cells:**
+
+4. **Editing Cells:**
    - Click any cell to edit its content.
    - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`, `=SUMPRODUCT(A1:A5, B1:B5)`, `=VLOOKUP(D1, A1:B10, 2, FALSE)`).
    - Press Tab or click elsewhere to save.
-4. **Navigation:**
+
+5. **Navigation:**
    - Use the navigation buttons to move the viewport.
    - Move to edges or step one row/column at a time.
-5. **Sheet Management:**
+
+6. **Sheet Management:**
    - Click sheet names at the top to switch between sheets.
    - Use cross-sheet references to link data between sheets.
 
@@ -506,26 +430,24 @@ The formula engine includes robust error handling:
 | Missing Cell | `0` | Empty or non-existent cells return 0 |
 | SUMPRODUCT Dimension Mismatch | `#ERROR: SUMPRODUCT ranges must have the same size` | Ranges have different numbers of cells |
 | VLOOKUP Invalid Arguments | `#ERROR: VLOOKUP requires at least 3 arguments` | Missing required parameters |
-| VLOOKUP Invalid Column | `#ERROR: Invalid column index number` | Column index < 1 or not numeric |
-| VLOOKUP Column Out of Range | `#ERROR: Column index exceeds table width` | Column number > table columns |
 | VLOOKUP No Match | `#N/A` | Exact match not found |
 
-Error cells are highlighted in red in Results Mode for easy identification. Console logs provide detailed error information.
+Error cells are highlighted in red in Results Mode for easy identification.
 
 ---
 
 ## Technical Details
 
-- **Column Letter Conversion:** Supports up to 3-letter column codes (A to ZZZ).
-- **Grid Size:** 999 rows × 18,278 columns (approximately 18.2 million cells).
-- **Viewport:** 7×7 fixed window that can navigate the entire grid.
-- **Formula Caching:** Automatic cache clearing when dependencies change.
-- **AST-Based Evaluation:** Formulas are parsed into Abstract Syntax Trees for accurate computation.
-- **Decimal Handling:** All numeric results are rounded to 2 decimal places to avoid floating-point precision issues.
-- **HTML Escaping:** Prevents XSS attacks by escaping special characters.
-- **Cross-Sheet References:** Format: `sheetname.cell` (e.g., `first.A1`).
-- **Dynamic Module Loading:** Functions are loaded on-demand using ES6 dynamic imports.
-- **Modular Architecture:** Each spreadsheet function is in its own file for maintainability.
+- **Column Letter Conversion:** Supports up to 3-letter column codes (A to ZZZ)
+- **Grid Size:** 999 rows × 18,278 columns (approximately 18.2 million cells)
+- **Viewport:** 7×7 fixed window that can navigate the entire grid
+- **Formula Caching:** Automatic cache clearing when dependencies change
+- **AST-Based Evaluation:** Formulas are parsed into Abstract Syntax Trees for accurate computation
+- **Decimal Handling:** All numeric results are rounded to 2 decimal places
+- **HTML Escaping:** Prevents XSS attacks by escaping special characters
+- **Cross-Sheet References:** Format: `sheetname.cell` (e.g., `first.A1`)
+- **Dynamic Module Loading:** Classes and functions are loaded on-demand using ES6 dynamic imports
+- **Modular Architecture:** Each component is in its own file for maintainability
 
 ---
 
@@ -534,20 +456,11 @@ Error cells are highlighted in red in Results Mode for easy identification. Cons
 The application includes a comprehensive test suite (`test.html`) that validates all formula functionality:
 
 - **33+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, SUMPRODUCT, and VLOOKUP
-- **SUMPRODUCT Tests:**
-  - Basic two-range multiplication
-  - Three-range multiplication
-  - Decimal values
-  - Cross-sheet references
-  - Single-row ranges
-  - Empty cell handling
-- **VLOOKUP Tests:**
-  - Exact match with value found
-  - Exact match with value not found (#N/A)
 - **Visual Test Results** with pass/fail indicators
 - **Report Generation** for failed tests
+- **Filtering** options (show all, passed only, failed only)
 
-Run `test.html` in a local HTTP server to validate the formula engine.
+Run `test.html` from the HTTP server to validate the formula engine.
 
 ---
 
@@ -566,17 +479,17 @@ Free to use and modify, MIT License
 ## Version History
 
 ### v1.3.0 (Current)
+- Refactored codebase into modular architecture with separate class files
+- Added dynamic class loading system
+- Moved all classes to `/classes` directory
+- Moved spreadsheet functions to `/functions` directory
+- Moved test suite to `/testing` directory
 - Added VLOOKUP function with exact and approximate match support
-- Implemented dynamic module loading for all spreadsheet functions
-- Refactored codebase into modular architecture with separate function files
-- Added comprehensive VLOOKUP test cases
-- Enhanced error handling for VLOOKUP operations
 
 ### v1.2.0
 - Added SUMPRODUCT function with support for 2+ ranges
-- Enhanced cross-sheet reference support for SUMPRODUCT
+- Enhanced cross-sheet reference support
 - Added comprehensive SUMPRODUCT test cases
-- Improved error handling for dimension mismatches
 
 ### v1.1.0
 - Added cross-sheet reference support
@@ -584,6 +497,6 @@ Free to use and modify, MIT License
 - Enhanced decimal handling
 
 ### v1.0.0
-- Initial release with basic arithmetic and spreadsheet functions (SUM, AVG, MAX, MIN, COUNT)
+- Initial release with basic arithmetic and spreadsheet functions
 - Viewport navigation and multiple sheet support
 - Dual mode display (formulas/results)
