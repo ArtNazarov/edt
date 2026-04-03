@@ -1,4 +1,6 @@
-/* edt.css - Updated with additional styles */
+/* edt.css - Core application styles */
+
+/* ==================== Base Table Styles ==================== */
 table {
     border-collapse: collapse;
     font-family: Arial, sans-serif;
@@ -28,6 +30,7 @@ td[contenteditable="true"]:focus {
     outline: 2px solid #4CAF50;
 }
 
+/* ==================== Sheets Navigation ==================== */
 .sheets {
     margin: 10px 0;
 }
@@ -48,6 +51,7 @@ td[contenteditable="true"]:focus {
     text-decoration: none;
 }
 
+/* ==================== Controls ==================== */
 .controls, .mode-controls {
     margin: 10px 0;
     padding: 10px;
@@ -75,6 +79,7 @@ button:hover {
     font-family: monospace;
 }
 
+/* ==================== Mode Buttons ==================== */
 .mode-btn {
     margin: 0 5px;
     padding: 8px 15px;
@@ -95,6 +100,7 @@ button:hover {
     background: #d0d0d0;
 }
 
+/* ==================== Cell Styles ==================== */
 .cell-formula {
     font-family: monospace;
     color: #e67e22;

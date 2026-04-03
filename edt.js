@@ -1,4 +1,4 @@
-// edt.js - Refactored with dynamic class loading
+// edt.js - Refactored with dynamic class loading and MainMenu integration
 // Main entry point that dynamically loads all required classes
 
 // ==================== Dynamic Class Loader ====================
@@ -7,6 +7,7 @@ class ClassLoader {
         this.classes = new Map();
         this.loadingPromises = new Map();
         this.classPathMap = {
+            // Core classes
             'ASTNode': './classes/ASTNode.js',
             'FormulaTokenizer': './classes/FormulaTokenizer.js',
             'FormulaParser': './classes/FormulaParser.js',
@@ -18,7 +19,26 @@ class ClassLoader {
             'SheetView': './classes/SheetView.js',
             'NavButtonsController': './classes/NavButtonsController.js',
             'CellsEditablesController': './classes/CellsEditablesController.js',
-            'AppController': './classes/AppController.js'
+            'AppController': './classes/AppController.js',
+            'MainMenu': './classes/MainMenu.js',
+            'CommandLine': './classes/CommandLine.js',
+
+            // File actions
+            'OpenAction': './actions/OpenAction.js',
+            'SaveAction': './actions/SaveAction.js',
+            'ExportCSVAction': './actions/ExportCSVAction.js',
+
+            // Navigation actions - Edge movements
+            'ActionMoveToTop': './actions/ActionMoveToTop.js',
+            'ActionMoveToBottom': './actions/ActionMoveToBottom.js',
+            'ActionMoveToLeft': './actions/ActionMoveToLeft.js',
+            'ActionMoveToRight': './actions/ActionMoveToRight.js',
+
+            // Navigation actions - Step movements
+            'ActionStepUp': './actions/ActionStepUp.js',
+            'ActionStepDown': './actions/ActionStepDown.js',
+            'ActionStepLeft': './actions/ActionStepLeft.js',
+            'ActionStepRight': './actions/ActionStepRight.js'
         };
     }
 
@@ -49,7 +69,7 @@ class ClassLoader {
             })
             .catch(error => {
                 this.loadingPromises.delete(className);
-                console.error(`Failed to load class ${className}:`, error);
+                console.error(`Failed to load class ${className} from ${filePath}:`, error);
                 throw new Error(`Class ${className} not available: ${error.message}`);
             });
 
@@ -73,7 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.app = new AppController();
     } catch (error) {
         console.error('Failed to initialize application:', error);
-        document.getElementById('table-container').innerHTML =
-            '<div style="color: red; padding: 20px;">Failed to load application. Please check that all class files exist in the "classes" folder and you are running from a web server.</div>';
+        const container = document.getElementById('table-container');
+        if (container) {
+            container.innerHTML = '<div style="color: red; padding: 20px; text-align: center;">Failed to load application. Please check that all class files exist and you are running from a web server.</div>';
+        }
     }
 });

@@ -1,12 +1,12 @@
 # Editable Table Viewport with Formula Support
 
-A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, and reactive formula computation.
+A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, reactive formula computation, main menu, command line interface, and file operations.
 
 ## Screenshots
 
-![UI](https://dl.dropbox.com/scl/fi/4mk968mznp8w3fyzxrfd0/_20260331_211514.png?rlkey=n1ox5zigg7hxecbjc6nl2u8lr&st=6yladcoe)
+![UI](https://dl.dropbox.com/scl/fi/dscmmzcglgb2axoekwpnt/updateduiwithmenu.png?rlkey=q23ikdea1y5hzwwb1iuigbqw1&st=893kf158)
 
-![Tests](https://dl.dropbox.com/scl/fi/ra9espm550lnagbgltbf4/vlookup.png?rlkey=wpscbb22e3igtnbhim0990aom&st=x2ehzx85)
+![Tests](https://dl.dropbox.com/scl/fi/vvj660ptyqiab597h4qro/sumproduct_test.png?rlkey=pagckitohaibwb1mjpe77shqs&st=zuraol74)
 
 ## Features
 
@@ -18,7 +18,9 @@ A JavaScript application that displays an editable spreadsheet-like table with v
   - Cell references (e.g., `A1`, `B2`, `ZZ14`)
   - Range references (e.g., `A1:C3`)
   - Cross-sheet references (e.g., `first.A1`, `second.B3`)
-  - *See [Expressions and Spreadsheet Functions](#expressions-and-spreadsheet-functions) for detailed documentation*
+- **Main Menu Bar:** File, Edit, View, Help menus with keyboard shortcuts
+- **Command Line Interface:** Execute commands with history and auto-completion
+- **File Operations:** Open/Save `.edt` files, Export to CSV
 - **Dual Mode Display:**
   - **Formulas Mode:** Shows actual formulas (e.g., `=SUM(A1:A3)`)
   - **Results Mode:** Shows computed values
@@ -29,6 +31,120 @@ A JavaScript application that displays an editable spreadsheet-like table with v
   - Step up/down/left/right one row/column at a time
 - **Large Virtual Grid:** Supports up to 999 rows and columns up to ZZZ (18,278 columns)
 - **Position Indicator:** Shows current viewport range and active mode
+
+---
+
+## Main Menu
+
+The application features a comprehensive main menu bar with the following menus and items:
+
+### File Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Open .edt | Open file dialog | `Ctrl+O` | Open a previously saved `.edt` spreadsheet file |
+| Save .edt | Save current data | `Ctrl+S` | Save all sheets data to an `.edt` file |
+| Export to CSV | Export current sheet | `Ctrl+E` | Export the current sheet to CSV format |
+
+### Edit Menu
+
+| Menu Item | Action | Description |
+|-----------|--------|-------------|
+| Formulas Mode | Switch to formulas view | Display cell formulas instead of computed values |
+| Results Mode | Switch to results view | Display computed values instead of formulas |
+
+### View Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Refresh | Refresh the view | `F5` | Refresh the current view and recalculate all formulas |
+
+### Help Menu
+
+| Menu Item | Action | Description |
+|-----------|--------|-------------|
+| About | Show about dialog | Display application information and version |
+| Keyboard Shortcuts | Show shortcuts dialog | Display all available keyboard shortcuts |
+
+---
+
+## Command Line Interface
+
+The command line interface provides a developer-friendly way to control the spreadsheet. Press `Ctrl+`` (backtick) to focus the command input.
+
+### Available Commands
+
+#### File Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `open` | `open` | Open an `.edt` file |
+| `save` | `save [filename]` | Save spreadsheet to `.edt` file |
+| `export` | `export [filename]` | Export current sheet to CSV |
+
+#### View Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `formulas` | `formulas` | Switch to Formulas Mode |
+| `results` | `results` | Switch to Results Mode |
+| `refresh` | `refresh` | Refresh the current view |
+
+#### Navigation Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `goto` | `goto <cell>` | Move viewport to specific cell (e.g., `goto A1`) |
+| `sheet` | `sheet <sheetname>` | Switch to a different sheet |
+
+#### Info Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `ls` | `ls` | List all available sheets |
+| `info` | `info` | Show current spreadsheet information |
+| `help` | `help [command]` | Show available commands or help for specific command |
+
+#### System Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `clear` | `clear` | Clear the command line output |
+| `history` | `history` | Show command history |
+| `exit` | `exit` | Close the command line interface |
+
+### Command Line Features
+
+- **Command History:** Use `↑` and `↓` arrow keys to navigate through command history
+- **Output Coloring:** Different message types have distinct colors:
+  - `info` - Blue
+  - `success` - Green
+  - `error` - Red
+  - `warning` - Orange
+- **Collapsible Output:** Click the header to minimize/hide command history
+- **Keyboard Shortcut:** `Ctrl+`` (backtick) to focus the command input
+- **Clear Output:** Use the `⌧` button or `clear` command
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+O` | Open .edt file |
+| `Ctrl+S` | Save .edt file |
+| `Ctrl+E` | Export to CSV |
+| `F5` | Refresh view |
+| `Ctrl+`` ` | Focus command line |
+| `↑` | Move viewport up one row |
+| `↓` | Move viewport down one row |
+| `←` | Move viewport left one column |
+| `→` | Move viewport right one column |
+| `Shift+↑` | Move to top edge |
+| `Shift+↓` | Move to bottom edge |
+| `Shift+←` | Move to left edge |
+| `Shift+→` | Move to right edge |
+| `Esc` (in command line) | Clear input or hide command line |
 
 ---
 
@@ -218,7 +334,6 @@ Looks up a value in the first column of a table and returns a value in the same 
 | `=VLOOKUP("Product B", A1:B3, 2, FALSE)` | Exact match for Product B | Returns 200 |
 | `=VLOOKUP(85, A1:B6, 2, TRUE)` | Approximate match for grade | Returns "B" |
 | `=VLOOKUP(A1, prices.A1:B100, 2, FALSE)` | Cross-sheet exact lookup | Returns price |
-| `=VLOOKUP(D1, inventory.A1:C500, 3, TRUE)` | Approximate match with default | Returns closest match |
 
 **Error Messages:**
 
@@ -228,7 +343,7 @@ Looks up a value in the first column of a table and returns a value in the same 
 | `#ERROR: Invalid column index number` | Column index < 1 or not a number |
 | `#ERROR: Invalid table range` | Table array is not a valid range |
 | `#ERROR: Column index exceeds table width` | Column number > table columns |
-| `#N/A` | No exact match found (range_lookup=FALSE) |
+| `#N/A` | No exact match found |
 
 ---
 
@@ -276,43 +391,48 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 
 ## Architecture
 
-The application follows a clean modular MVC-like architecture with separate concerns. The codebase is organized into three main directories:
+The application follows a clean modular MVC-like architecture with separate concerns. The codebase is organized into several directories:
 
 ### Core Components (`/classes`)
 
 | Class | Description |
 |-------|-------------|
-| `ASTNode` | Represents nodes in the Abstract Syntax Tree (numbers, cell references, binary operations, functions) |
-| `FormulaTokenizer` | Converts formula strings into tokens for parsing |
-| `FormulaParser` | Parses token streams into AST nodes following operator precedence |
-| `FunctionRegistry` | Dynamically loads spreadsheet functions from the `/functions` directory with caching |
-| `ASTEvaluator` | Evaluates AST nodes, handles cell references, ranges, and function execution |
-| `ComputationEngine` | Main entry point for formula computation, manages evaluator instances per sheet |
-| `DataHolder` | Stores all sheet data (cells, viewport positions) and provides CRUD operations |
-| `ViewModel` | Provides computed properties for view state (visible range, navigation capabilities) |
-| `SheetView` | Renders the 7x7 viewport as an HTML table with edit capabilities |
-| `NavButtonsController` | Handles viewport navigation button clicks with boundary validation |
-| `CellsEditablesController` | Manages cell edit events and triggers cache invalidation |
-| `AppController` | Orchestrates all components, manages mode switching and sheet navigation |
+| `ASTNode` | Represents nodes in the Abstract Syntax Tree |
+| `FormulaTokenizer` | Converts formula strings into tokens |
+| `FormulaParser` | Parses token streams into AST nodes |
+| `FunctionRegistry` | Dynamically loads spreadsheet functions |
+| `ASTEvaluator` | Evaluates AST nodes and handles cell references |
+| `ComputationEngine` | Main entry point for formula computation |
+| `DataHolder` | Stores all sheet data and provides CRUD operations |
+| `ViewModel` | Provides computed properties for view state |
+| `SheetView` | Renders the 7x7 viewport as an HTML table |
+| `NavButtonsController` | Handles viewport navigation button clicks |
+| `CellsEditablesController` | Manages cell edit events |
+| `AppController` | Orchestrates all components |
+| `MainMenu` | Creates and manages the main menu bar |
+| `CommandLine` | Provides command line interface |
+
+### Actions (`/actions`)
+
+| Action | Description |
+|--------|-------------|
+| `OpenAction` | Open .edt JSON files |
+| `SaveAction` | Save spreadsheet as .edt |
+| `ExportCSVAction` | Export current sheet to CSV |
+| `ActionMoveToTop/Bottom/Left/Right` | Edge navigation actions |
+| `ActionStepUp/Down/Left/Right` | Step navigation actions |
 
 ### Spreadsheet Functions (`/functions`)
 
 | File | Function | Description |
 |------|----------|-------------|
-| `sum.js` | SUM | Sums all numeric values in a range |
+| `sum.js` | SUM | Sums all numeric values |
 | `avg.js` | AVG | Calculates arithmetic mean |
 | `max.js` | MAX | Returns maximum value |
 | `min.js` | MIN | Returns minimum value |
 | `count.js` | COUNT | Counts numeric values |
-| `sumproduct.js` | SUMPRODUCT | Multiplies corresponding components and sums products |
+| `sumproduct.js` | SUMPRODUCT | Multiplies and sums products |
 | `vlookup.js` | VLOOKUP | Looks up values in a table |
-
-### Testing (`/testing`)
-
-| File | Description |
-|------|-------------|
-| `tests.css` | Styles for the test suite interface |
-| `tests.js` | Test case definitions and execution logic (33+ tests) |
 
 ---
 
@@ -321,9 +441,11 @@ The application follows a clean modular MVC-like architecture with separate conc
 ```
 /
 ├── edt.html              # Main application HTML
-├── edt.css               # Application styles
+├── edt.css               # Core application styles
+├── mainmenu.css          # Main menu and modal styles
+├── commandline.css       # Command line interface styles
 ├── edt.js                # Main entry point (dynamic class loader)
-├── test.html             # Test suite HTML (loads tests from /testing)
+├── test.html             # Test suite HTML
 ├── README.md             # This documentation
 ├── classes/              # Core application classes
 │   ├── ASTNode.js
@@ -337,7 +459,21 @@ The application follows a clean modular MVC-like architecture with separate conc
 │   ├── SheetView.js
 │   ├── NavButtonsController.js
 │   ├── CellsEditablesController.js
-│   └── AppController.js
+│   ├── AppController.js
+│   ├── MainMenu.js
+│   └── CommandLine.js
+├── actions/              # Action components
+│   ├── OpenAction.js
+│   ├── SaveAction.js
+│   ├── ExportCSVAction.js
+│   ├── ActionMoveToTop.js
+│   ├── ActionMoveToBottom.js
+│   ├── ActionMoveToLeft.js
+│   ├── ActionMoveToRight.js
+│   ├── ActionStepUp.js
+│   ├── ActionStepDown.js
+│   ├── ActionStepLeft.js
+│   └── ActionStepRight.js
 ├── functions/            # Spreadsheet function implementations
 │   ├── sum.js
 │   ├── avg.js
@@ -362,28 +498,38 @@ The application follows a clean modular MVC-like architecture with separate conc
 
 2. **Open:** Navigate to `http://localhost:8000/edt.html` in a modern web browser.
 
-3. **Mode Switching:**
-   - Click **"Switch to Input Formulas Mode"** to view/edit formulas.
-   - Click **"Switch to Compute Results Mode"** to see calculated values.
+3. **Main Menu:**
+   - Click **File → Open .edt** to load a saved spreadsheet
+   - Click **File → Save .edt** to save your work
+   - Click **File → Export to CSV** to export the current sheet
 
-4. **Editing Cells:**
-   - Click any cell to edit its content.
-   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`, `=SUMPRODUCT(A1:A5, B1:B5)`, `=VLOOKUP(D1, A1:B10, 2, FALSE)`).
-   - Press Tab or click elsewhere to save.
+4. **Command Line:**
+   - Press `Ctrl+`` (backtick) to focus the command input
+   - Type `help` to see available commands
+   - Use `↑` and `↓` to navigate command history
 
-5. **Navigation:**
-   - Use the navigation buttons to move the viewport.
-   - Move to edges or step one row/column at a time.
+5. **Mode Switching:**
+   - Click **Edit → Formulas Mode** to view/edit formulas
+   - Click **Edit → Results Mode** to see calculated values
 
-6. **Sheet Management:**
-   - Click sheet names at the top to switch between sheets.
-   - Use cross-sheet references to link data between sheets.
+6. **Editing Cells:**
+   - Click any cell to edit its content
+   - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`)
+   - Press Tab or click elsewhere to save
+
+7. **Navigation:**
+   - Use the navigation buttons or arrow keys to move the viewport
+   - Use Shift+Arrow keys to move to edges
+
+8. **Sheet Management:**
+   - Click sheet names at the top to switch between sheets
+   - Use cross-sheet references to link data between sheets
 
 ---
 
 ## Data Persistence
 
-Cell data is stored in memory in the `DataHolder` object. Example data included:
+Cell data is stored in memory and can be saved to/loaded from `.edt` JSON files. Example data included:
 
 **First Sheet:**
 - A1: `"Some data"`
@@ -414,8 +560,6 @@ Cell data is stored in memory in the `DataHolder` object. Example data included:
 - D1: `"Product B"`
 - E1: `=VLOOKUP(D1, A1:B3, 2, FALSE)` → `200`
 
-*Empty cells are not stored to optimize memory usage.*
-
 ---
 
 ## Error Handling
@@ -429,7 +573,6 @@ The formula engine includes robust error handling:
 | Division by Zero | `0` | Returns 0 instead of error |
 | Missing Cell | `0` | Empty or non-existent cells return 0 |
 | SUMPRODUCT Dimension Mismatch | `#ERROR: SUMPRODUCT ranges must have the same size` | Ranges have different numbers of cells |
-| VLOOKUP Invalid Arguments | `#ERROR: VLOOKUP requires at least 3 arguments` | Missing required parameters |
 | VLOOKUP No Match | `#N/A` | Exact match not found |
 
 Error cells are highlighted in red in Results Mode for easy identification.
@@ -478,23 +621,27 @@ Free to use and modify, MIT License
 
 ## Version History
 
-### v1.3.0 (Current)
+### v1.4.0 (Current)
+- Added Main Menu bar with File, Edit, View, Help menus
+- Added Command Line Interface with command history
+- Added File operations: Open/Save `.edt` files, Export to CSV
+- Added Navigation actions as modular components
+- Added keyboard shortcuts for all major operations
+- Added modal dialogs for About and Keyboard Shortcuts
+- Refactored styles into separate CSS files
+
+### v1.3.0
 - Refactored codebase into modular architecture with separate class files
 - Added dynamic class loading system
-- Moved all classes to `/classes` directory
-- Moved spreadsheet functions to `/functions` directory
-- Moved test suite to `/testing` directory
 - Added VLOOKUP function with exact and approximate match support
 
 ### v1.2.0
 - Added SUMPRODUCT function with support for 2+ ranges
 - Enhanced cross-sheet reference support
-- Added comprehensive SUMPRODUCT test cases
 
 ### v1.1.0
 - Added cross-sheet reference support
 - Implemented range references for all functions
-- Enhanced decimal handling
 
 ### v1.0.0
 - Initial release with basic arithmetic and spreadsheet functions

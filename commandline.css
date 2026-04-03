@@ -1,0 +1,159 @@
+/* commandline.css - Simple Command Input Bar */
+
+#command-line-container {
+    margin: 5px 0;
+    width: 100%;
+}
+
+.command-line {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    overflow: hidden;
+}
+
+.command-line-header {
+    background: #e9ecef;
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.command-line-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #495057;
+}
+
+.command-line-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.command-line-controls button {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 4px;
+    transition: color 0.2s;
+    margin: 0;
+}
+
+.command-line-controls button:hover {
+    background: none;
+    color: #495057;
+}
+
+.command-line-output {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 6px 12px;
+    background: #ffffff;
+    font-size: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.cmd-line {
+    padding: 2px 0;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    word-break: break-all;
+}
+
+.cmd-time {
+    color: #adb5bd;
+    margin-right: 10px;
+    font-size: 10px;
+}
+
+.cmd-info {
+    color: #0d6efd;
+}
+
+.cmd-success {
+    color: #198754;
+}
+
+.cmd-error {
+    color: #dc3545;
+}
+
+.cmd-warning {
+    color: #fd7e14;
+}
+
+.cmd-welcome {
+    color: #198754;
+    padding: 4px 0;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.command-line-input-container {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    background: #ffffff;
+}
+
+.cmd-prompt {
+    color: #198754;
+    font-weight: bold;
+    margin-right: 8px;
+    font-family: monospace;
+}
+
+.command-line-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: #212529;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    outline: none;
+    padding: 4px 0;
+}
+
+.command-line-input:focus {
+    outline: none;
+}
+
+.command-line-input::placeholder {
+    color: #adb5bd;
+}
+
+/* Scrollbar styling for command output */
+.command-line-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.command-line-output::-webkit-scrollbar-track {
+    background: #f8f9fa;
+}
+
+.command-line-output::-webkit-scrollbar-thumb {
+    background: #ced4da;
+    border-radius: 3px;
+}
+
+.command-line-output::-webkit-scrollbar-thumb:hover {
+    background: #adb5bd;
+}
+
+/* Minimized state - collapse output */
+.command-line.minimized .command-line-output {
+    display: none;
+}
+
+.command-line.minimized .command-line-header {
+    border-bottom: none;
+}
