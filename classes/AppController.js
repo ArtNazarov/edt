@@ -425,7 +425,7 @@ export default class AppController {
         }
     }
 
-    // Method to get all sheet data for save/export
+    // Method to get all sheet data for save/export (already includes metadata)
     getAllSheetData() {
         const sheetsData = {};
 
@@ -436,17 +436,19 @@ export default class AppController {
                 cells: sheet.cells.map(cell => ({
                     cell: cell.cell,
                     data: cell.data,
-                    metadata: cell.metadata || null
+                    metadata: cell.metadata || null  // This preserves tips and other metadata
                 }))
             };
         }
 
         return {
-            version: '1.4.0',
+            version: '1.5.0',
             currentSheet: this.dataHolder.currentSheet,
             sheets: sheetsData
         };
     }
+
+
 
     // Method to load sheet data from external source
     async loadSheetData(data) {

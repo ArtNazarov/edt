@@ -1,4 +1,4 @@
-// SaveAction - Handles saving spreadsheet data to .edt JSON files
+// SaveAction - Handles saving spreadsheet data to .edt JSON files with metadata
 export default class SaveAction {
     constructor(appController) {
         this.appController = appController;
@@ -7,8 +7,16 @@ export default class SaveAction {
     execute() {
         return new Promise((resolve) => {
             try {
-                // Get all sheet data
+                // Get all sheet data including metadata
                 const data = this.appController.getAllSheetData();
+
+                // Add metadata version and save timestamp
+                data.metadata = {
+                    savedAt: new Date().toISOString(),
+                    appVersion: data.version,
+                    includesTips: true,
+                    includesCellMetadata: true
+                };
 
                 // Convert to JSON string with pretty formatting
                 const jsonString = JSON.stringify(data, null, 2);
@@ -34,7 +42,9 @@ export default class SaveAction {
                     URL.revokeObjectURL(url);
                 }, 100);
 
-                this.showMessage(`Successfully saved to: ${filename}`, 'success');
+                // Count total tips for feedback
+                const tipCount = this.countTotalTips(data);
+                this.showMessage(`Successfully saved to: ${filename}${tipCount > 0 ? ` (${tipCount} tips included)` : ''}`, 'success');
                 resolve(true);
             } catch (error) {
                 console.error('Error saving file:', error);
@@ -42,6 +52,21 @@ export default class SaveAction {
                 resolve(false);
             }
         });
+    }
+
+    countTotalTips(data) {
+        let tipCount = 0;
+        for (const sheetName of Object.keys(data.sheets)) {
+            const sheet = data.sheets[sheetName];
+            if (sheet.cells) {
+                for (const cell of sheet.cells) {
+                    if (cell.metadata && cell.metadata.tip) {
+                        tipCount++;
+                    }
+                }
+            }
+        }
+        return tipCount;
     }
 
     getTimestamp() {

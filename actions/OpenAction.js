@@ -1,4 +1,4 @@
-// OpenAction - Handles opening .edt JSON files
+// OpenAction - Handles opening .edt JSON files with metadata
 export default class OpenAction {
     constructor(appController) {
         this.appController = appController;
@@ -26,7 +26,11 @@ export default class OpenAction {
                     // Validate the data structure
                     if (this.validateData(data)) {
                         await this.appController.loadSheetData(data);
-                        this.showMessage(`Successfully opened file: ${file.name}`, 'success');
+
+                        // Report metadata info if present
+                        const tipCount = this.countTotalTips(data);
+                        const metadataInfo = data.metadata ? ` (v${data.metadata.appVersion || 'unknown'})` : '';
+                        this.showMessage(`Successfully opened file: ${file.name}${metadataInfo}${tipCount > 0 ? ` - ${tipCount} tips loaded` : ''}`, 'success');
                         resolve(true);
                     } else {
                         this.showMessage('Invalid .edt file format', 'error');
@@ -55,6 +59,23 @@ export default class OpenAction {
         });
     }
 
+    countTotalTips(data) {
+        let tipCount = 0;
+        if (data.sheets) {
+            for (const sheetName of Object.keys(data.sheets)) {
+                const sheet = data.sheets[sheetName];
+                if (sheet.cells) {
+                    for (const cell of sheet.cells) {
+                        if (cell.metadata && cell.metadata.tip) {
+                            tipCount++;
+                        }
+                    }
+                }
+            }
+        }
+        return tipCount;
+    }
+
     validateData(data) {
         // Check if data has required structure
         if (!data || typeof data !== 'object') return false;
@@ -68,10 +89,18 @@ export default class OpenAction {
             if (!sheetData.start_col || typeof sheetData.start_col !== 'number') return false;
             if (!Array.isArray(sheetData.cells)) return false;
 
-            // Validate cells array
+            // Validate cells array (allow metadata field)
             for (const cell of sheetData.cells) {
                 if (!cell.cell || typeof cell.cell !== 'string') return false;
                 if (cell.data === undefined) return false;
+                // metadata is optional, so we don't strictly validate it
+                if (cell.metadata && typeof cell.metadata !== 'object') return false;
+
+                // If tip metadata exists, validate its structure
+                if (cell.metadata && cell.metadata.tip) {
+                    if (typeof cell.metadata.tip.text !== 'string') return false;
+                    if (typeof cell.metadata.tip.visible !== 'boolean') return false;
+                }
             }
         }
 
