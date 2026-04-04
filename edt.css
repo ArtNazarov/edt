@@ -121,3 +121,18 @@ button:hover {
 td[rowspan], td[colspan] {
     text-align: center;
 }
+
+/* Cell with tip indicator */
+.cell-has-tip {
+    position: relative;
+}
+
+.cell-has-tip::after {
+    content: '💡';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    opacity: 0.6;
+    pointer-events: none;
+}

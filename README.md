@@ -1,10 +1,10 @@
 # Editable Table Viewport with Formula Support
 
-A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, reactive formula computation, main menu, command line interface, and file operations.
+A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, reactive formula computation, main menu, command line interface, context menu, cell tips, and file operations.
 
 ## Screenshots
 
-![UI](https://dl.dropbox.com/scl/fi/dscmmzcglgb2axoekwpnt/updateduiwithmenu.png?rlkey=q23ikdea1y5hzwwb1iuigbqw1&st=893kf158)
+![UI](https://dl.dropbox.com/scl/fi/ppuzeijjt37vvyxsr54nx/tips.png?rlkey=t05p0zh7zhon2swdbo44j86bx&st=xrofpbil)
 
 ![Tests](https://dl.dropbox.com/scl/fi/vvj660ptyqiab597h4qro/sumproduct_test.png?rlkey=pagckitohaibwb1mjpe77shqs&st=zuraol74)
 
@@ -21,6 +21,9 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 - **Main Menu Bar:** File, Edit, View, Help menus with keyboard shortcuts
 - **Command Line Interface:** Execute commands with history and auto-completion
 - **File Operations:** Open/Save `.edt` files, Export to CSV
+- **Context Menu:** Right-click on any cell for quick actions
+- **Cell Tips:** Add, show, hide, edit, and delete sticky notes for any cell
+- **Copy/Cut/Paste:** Full clipboard support with metadata preservation
 - **Dual Mode Display:**
   - **Formulas Mode:** Shows actual formulas (e.g., `=SUM(A1:A3)`)
   - **Results Mode:** Shows computed values
@@ -31,6 +34,48 @@ A JavaScript application that displays an editable spreadsheet-like table with v
   - Step up/down/left/right one row/column at a time
 - **Large Virtual Grid:** Supports up to 999 rows and columns up to ZZZ (18,278 columns)
 - **Position Indicator:** Shows current viewport range and active mode
+
+---
+
+## Context Menu (Right-Click)
+
+Right-click on any cell to open a context menu with the following options:
+
+### Edit Submenu
+
+| Menu Item | Keyboard Shortcut | Description |
+|-----------|-------------------|-------------|
+| Copy | `Ctrl+C` | Copy cell content to clipboard |
+| Cut | `Ctrl+X` | Cut cell content to clipboard and clear the cell |
+| Paste | `Ctrl+V` | Paste clipboard content to selected cell |
+
+### Tips Submenu
+
+The Tips submenu is dynamic and changes based on the cell's tip state:
+
+| Cell State | Menu Items |
+|------------|-------------|
+| No tip exists | Add Tip |
+| Tip exists and visible | Hide Tip, Edit Tip, Delete Tip |
+| Tip exists and hidden | Show Tip, Edit Tip, Delete Tip |
+
+#### Tip Operations
+
+| Operation | Description |
+|-----------|-------------|
+| **Add Tip** | Adds a yellow sticky note to the cell with custom text |
+| **Show Tip** | Displays a hidden tip |
+| **Hide Tip** | Hides a visible tip (preserves content) |
+| **Edit Tip** | Modifies the tip text |
+| **Delete Tip** | Permanently removes the tip |
+
+**Tip Features:**
+- Yellow background with light bulb icon (💡)
+- Rounded corners with arrow pointing to cell
+- Close button to dismiss
+- Auto-positioning (above cell by default, below if not enough space)
+- Persists across sheet switches and saves
+- Visual indicator (💡) in top-right corner of cells with tips
 
 ---
 
@@ -134,6 +179,9 @@ The command line interface provides a developer-friendly way to control the spre
 | `Ctrl+O` | Open .edt file |
 | `Ctrl+S` | Save .edt file |
 | `Ctrl+E` | Export to CSV |
+| `Ctrl+C` | Copy selected cell |
+| `Ctrl+X` | Cut selected cell |
+| `Ctrl+V` | Paste to selected cell |
 | `F5` | Refresh view |
 | `Ctrl+`` ` | Focus command line |
 | `↑` | Move viewport up one row |
@@ -411,6 +459,8 @@ The application follows a clean modular MVC-like architecture with separate conc
 | `AppController` | Orchestrates all components |
 | `MainMenu` | Creates and manages the main menu bar |
 | `CommandLine` | Provides command line interface |
+| `UITip` | Manages cell tip display |
+| `PopupContextMenu` | Handles right-click context menu |
 
 ### Actions (`/actions`)
 
@@ -421,6 +471,14 @@ The application follows a clean modular MVC-like architecture with separate conc
 | `ExportCSVAction` | Export current sheet to CSV |
 | `ActionMoveToTop/Bottom/Left/Right` | Edge navigation actions |
 | `ActionStepUp/Down/Left/Right` | Step navigation actions |
+| `ActionCopy` | Copy cell content to clipboard |
+| `ActionCut` | Cut cell content to clipboard |
+| `ActionPaste` | Paste clipboard content to cell |
+| `ActionAddTip` | Add a tip to a cell |
+| `ActionShowTip` | Show a hidden tip |
+| `ActionHideTip` | Hide a visible tip |
+| `ActionEditTip` | Edit tip text |
+| `ActionDeleteTip` | Delete tip from cell |
 
 ### Spreadsheet Functions (`/functions`)
 
@@ -461,7 +519,9 @@ The application follows a clean modular MVC-like architecture with separate conc
 │   ├── CellsEditablesController.js
 │   ├── AppController.js
 │   ├── MainMenu.js
-│   └── CommandLine.js
+│   ├── CommandLine.js
+│   ├── UITip.js
+│   └── PopupContextMenu.js
 ├── actions/              # Action components
 │   ├── OpenAction.js
 │   ├── SaveAction.js
@@ -473,7 +533,15 @@ The application follows a clean modular MVC-like architecture with separate conc
 │   ├── ActionStepUp.js
 │   ├── ActionStepDown.js
 │   ├── ActionStepLeft.js
-│   └── ActionStepRight.js
+│   ├── ActionStepRight.js
+│   ├── ActionCopy.js
+│   ├── ActionCut.js
+│   ├── ActionPaste.js
+│   ├── ActionAddTip.js
+│   ├── ActionShowTip.js
+│   ├── ActionHideTip.js
+│   ├── ActionEditTip.js
+│   └── ActionDeleteTip.js
 ├── functions/            # Spreadsheet function implementations
 │   ├── sum.js
 │   ├── avg.js
@@ -508,28 +576,41 @@ The application follows a clean modular MVC-like architecture with separate conc
    - Type `help` to see available commands
    - Use `↑` and `↓` to navigate command history
 
-5. **Mode Switching:**
+5. **Context Menu (Right-Click):**
+   - Right-click any cell to open the context menu
+   - Use **Edit** submenu for Copy, Cut, Paste
+   - Use **Tips** submenu to manage cell sticky notes
+
+6. **Cell Tips:**
+   - Right-click a cell → Tips → Add Tip
+   - Enter your tip text
+   - The tip appears as a yellow bubble near the cell
+   - Use Hide/Show to toggle visibility
+   - Use Edit to change text
+   - Use Delete to remove permanently
+
+7. **Mode Switching:**
    - Click **Edit → Formulas Mode** to view/edit formulas
    - Click **Edit → Results Mode** to see calculated values
 
-6. **Editing Cells:**
+8. **Editing Cells:**
    - Click any cell to edit its content
    - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`)
    - Press Tab or click elsewhere to save
 
-7. **Navigation:**
+9. **Navigation:**
    - Use the navigation buttons or arrow keys to move the viewport
    - Use Shift+Arrow keys to move to edges
 
-8. **Sheet Management:**
-   - Click sheet names at the top to switch between sheets
-   - Use cross-sheet references to link data between sheets
+10. **Sheet Management:**
+    - Click sheet names at the top to switch between sheets
+    - Use cross-sheet references to link data between sheets
 
 ---
 
 ## Data Persistence
 
-Cell data is stored in memory and can be saved to/loaded from `.edt` JSON files. Example data included:
+Cell data is stored in memory and can be saved to/loaded from `.edt` JSON files. Tips and metadata are preserved across saves. Example data included:
 
 **First Sheet:**
 - A1: `"Some data"`
@@ -591,6 +672,8 @@ Error cells are highlighted in red in Results Mode for easy identification.
 - **Cross-Sheet References:** Format: `sheetname.cell` (e.g., `first.A1`)
 - **Dynamic Module Loading:** Classes and functions are loaded on-demand using ES6 dynamic imports
 - **Modular Architecture:** Each component is in its own file for maintainability
+- **Metadata Support:** Cell metadata for tips and future extensions
+- **Clipboard Integration:** System clipboard support for copy/paste
 
 ---
 
@@ -621,7 +704,17 @@ Free to use and modify, MIT License
 
 ## Version History
 
-### v1.4.0 (Current)
+### v1.5.0 (Current)
+- Added Context Menu (right-click) with dynamic Tip management
+- Added Cell Tips feature with full CRUD operations
+- Added Copy, Cut, Paste functionality with metadata preservation
+- Added dynamic menu items based on tip state (Show/Hide toggle)
+- Added tip indicator (💡) on cells with tips
+- Added tip repositioning on scroll/resize
+- Added metadata persistence for tips in save/load
+- Added close button on tips to hide them
+
+### v1.4.0
 - Added Main Menu bar with File, Edit, View, Help menus
 - Added Command Line Interface with command history
 - Added File operations: Open/Save `.edt` files, Export to CSV

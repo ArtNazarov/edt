@@ -6,6 +6,7 @@ import SheetView from './SheetView.js';
 import NavButtonsController from './NavButtonsController.js';
 import MainMenu from './MainMenu.js';
 import CommandLine from './CommandLine.js';
+import UITip from './UITip.js';
 
 // AppController - Orchestrates all components
 export default class AppController {
@@ -17,6 +18,8 @@ export default class AppController {
         this.actions = new Map();
         this.mainMenu = null;
         this.commandLine = null;
+        this.uiTip = null;
+        this.contextMenu = null;
         this.init();
     }
 
@@ -31,28 +34,128 @@ export default class AppController {
         this.attachKeyboardShortcuts();
         this.updatePositionInfo();
         this.updateModeButtons();
+
+        // Initialize UITip after everything else
+        this.uiTip = new UITip(this);
+        this.uiTip.attachListeners();
+
+        // Initialize Context Menu
+        this.initContextMenu();
+
+        // Ensure window.app is set for global access
+        if (!window.app) {
+            window.app = this;
+        }
+
+        console.log('AppController initialized successfully');
+    }
+
+    initContextMenu() {
+        // Import PopupContextMenu dynamically
+        import('./PopupContextMenu.js').then(module => {
+            const PopupContextMenu = module.default;
+            this.contextMenu = new PopupContextMenu(this);
+            console.log('Context menu initialized successfully');
+        }).catch(error => {
+            console.error('Failed to load PopupContextMenu:', error);
+        });
+    }
+
+    handleContextMenu(event, cellId) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        console.log('handleContextMenu called for cell:', cellId, 'at position:', event.pageX, event.pageY);
+
+        if (this.contextMenu) {
+            this.contextMenu.show(event.pageX, event.pageY, cellId);
+        } else {
+            console.warn('Context menu not yet loaded, attempting lazy load...');
+            // Lazy load context menu if not yet loaded
+            import('./PopupContextMenu.js').then(module => {
+                const PopupContextMenu = module.default;
+                this.contextMenu = new PopupContextMenu(this);
+                this.contextMenu.show(event.pageX, event.pageY, cellId);
+                console.log('Context menu lazy loaded and shown');
+            }).catch(error => {
+                console.error('Failed to load context menu:', error);
+                alert('Failed to load context menu. Please refresh the page.');
+            });
+        }
     }
 
     async loadActions() {
         try {
+            // File actions
             const OpenAction = await window.classLoader.loadClass('OpenAction');
             const SaveAction = await window.classLoader.loadClass('SaveAction');
             const ExportCSVAction = await window.classLoader.loadClass('ExportCSVAction');
 
+            // Navigation actions - Edge movements
+            const ActionMoveToTop = await window.classLoader.loadClass('ActionMoveToTop');
+            const ActionMoveToBottom = await window.classLoader.loadClass('ActionMoveToBottom');
+            const ActionMoveToLeft = await window.classLoader.loadClass('ActionMoveToLeft');
+            const ActionMoveToRight = await window.classLoader.loadClass('ActionMoveToRight');
+
+            // Navigation actions - Step movements
+            const ActionStepUp = await window.classLoader.loadClass('ActionStepUp');
+            const ActionStepDown = await window.classLoader.loadClass('ActionStepDown');
+            const ActionStepLeft = await window.classLoader.loadClass('ActionStepLeft');
+            const ActionStepRight = await window.classLoader.loadClass('ActionStepRight');
+
+            // Tip actions
+            const ActionAddTip = await window.classLoader.loadClass('ActionAddTip');
+            const ActionShowTip = await window.classLoader.loadClass('ActionShowTip');
+            const ActionHideTip = await window.classLoader.loadClass('ActionHideTip');
+            const ActionEditTip = await window.classLoader.loadClass('ActionEditTip');
+            const ActionDeleteTip = await window.classLoader.loadClass('ActionDeleteTip');
+
+            // Edit actions (Copy, Cut, Paste)
+            const ActionCopy = await window.classLoader.loadClass('ActionCopy');
+            const ActionCut = await window.classLoader.loadClass('ActionCut');
+            const ActionPaste = await window.classLoader.loadClass('ActionPaste');
+
+            // Register all actions
             this.actions.set('open', new OpenAction(this));
             this.actions.set('save', new SaveAction(this));
             this.actions.set('export-csv', new ExportCSVAction(this));
+
+            this.actions.set('move-to-top', new ActionMoveToTop(this));
+            this.actions.set('move-to-bottom', new ActionMoveToBottom(this));
+            this.actions.set('move-to-left', new ActionMoveToLeft(this));
+            this.actions.set('move-to-right', new ActionMoveToRight(this));
+
+            this.actions.set('step-up', new ActionStepUp(this));
+            this.actions.set('step-down', new ActionStepDown(this));
+            this.actions.set('step-left', new ActionStepLeft(this));
+            this.actions.set('step-right', new ActionStepRight(this));
+
+            // Register tip actions
+            this.actions.set('add-tip', new ActionAddTip(this));
+            this.actions.set('show-tip', new ActionShowTip(this));
+            this.actions.set('hide-tip', new ActionHideTip(this));
+            this.actions.set('edit-tip', new ActionEditTip(this));
+            this.actions.set('delete-tip', new ActionDeleteTip(this));
+
+            // Register edit actions
+            this.actions.set('copy', new ActionCopy(this));
+            this.actions.set('cut', new ActionCut(this));
+            this.actions.set('paste', new ActionPaste(this));
+
+            console.log('All actions loaded successfully');
         } catch (error) {
             console.error('Failed to load actions:', error);
         }
     }
 
-    async executeAction(actionName) {
+    async executeAction(actionName, ...args) {
         const action = this.actions.get(actionName);
         if (action) {
-            await action.execute();
+            console.log(`Executing action: ${actionName}`, args);
+            return await action.execute(...args);
         } else {
             console.warn(`Action not found: ${actionName}`);
+            return false;
         }
     }
 
@@ -89,12 +192,44 @@ export default class AppController {
             await this.cellsController.handleCellEdit(this.dataHolder.currentSheet, cellId, newValue);
             await this.updateViewAndViewModel();
             this.updatePositionInfo();
-        });
+        }, this);
         this.navController = new NavButtonsController(this.dataHolder, this.viewModel, async () => {
             await this.updateViewAndViewModel();
             this.updatePositionInfo();
         });
         await this.sheetView.render();
+
+        // Restore tips after view update
+        if (this.uiTip) {
+            this.restoreTipsForCurrentSheet();
+        }
+    }
+
+    restoreTipsForCurrentSheet() {
+        // Clear all existing tips first
+        if (this.uiTip) {
+            this.uiTip.removeAllTips();
+        }
+
+        // Then restore tips from metadata for current sheet only
+        const sheet = this.dataHolder.getCurrentSheet();
+        if (!sheet || !sheet.cells) return;
+
+        console.log('Restoring tips for current sheet:', this.dataHolder.currentSheet);
+
+        for (const cell of sheet.cells) {
+            if (cell.metadata && cell.metadata.tip && cell.metadata.tip.visible) {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    this.uiTip.showTip(cell.cell, cell.metadata.tip.text, false);
+                }, 50);
+            }
+        }
+    }
+
+    restoreTips() {
+        // This method is kept for backward compatibility
+        this.restoreTipsForCurrentSheet();
     }
 
     renderSheetsNav() {
@@ -112,10 +247,22 @@ export default class AppController {
     }
 
     async switchSheet(sheetName) {
+        console.log('Switching to sheet:', sheetName);
+
+        // Clear all tips before switching
+        if (this.uiTip) {
+            this.uiTip.removeAllTips();
+        }
+
         this.dataHolder.setCurrentSheet(sheetName);
         this.renderSheetsNav();
         await this.updateViewAndViewModel();
         this.updatePositionInfo();
+
+        // Restore tips for the new sheet
+        if (this.uiTip) {
+            this.restoreTipsForCurrentSheet();
+        }
     }
 
     attachGlobalButtonHandlers() {
@@ -168,6 +315,30 @@ export default class AppController {
             else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                 e.preventDefault();
                 await this.executeAction('export-csv');
+            }
+            // Ctrl+C: Copy
+            else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                e.preventDefault();
+                const activeCell = document.activeElement;
+                if (activeCell && activeCell.getAttribute('data-cell')) {
+                    await this.executeAction('copy', activeCell.getAttribute('data-cell'));
+                }
+            }
+            // Ctrl+X: Cut
+            else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+                e.preventDefault();
+                const activeCell = document.activeElement;
+                if (activeCell && activeCell.getAttribute('data-cell')) {
+                    await this.executeAction('cut', activeCell.getAttribute('data-cell'));
+                }
+            }
+            // Ctrl+V: Paste
+            else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                const activeCell = document.activeElement;
+                if (activeCell && activeCell.getAttribute('data-cell')) {
+                    await this.executeAction('paste', activeCell.getAttribute('data-cell'));
+                }
             }
             // F5: Refresh
             else if (e.key === 'F5') {
@@ -262,12 +433,16 @@ export default class AppController {
             sheetsData[sheetName] = {
                 start_row: sheet.start_row,
                 start_col: sheet.start_col,
-                cells: sheet.cells.map(cell => ({ cell: cell.cell, data: cell.data }))
+                cells: sheet.cells.map(cell => ({
+                    cell: cell.cell,
+                    data: cell.data,
+                    metadata: cell.metadata || null
+                }))
             };
         }
 
         return {
-            version: '1.3.0',
+            version: '1.4.0',
             currentSheet: this.dataHolder.currentSheet,
             sheets: sheetsData
         };
@@ -289,7 +464,12 @@ export default class AppController {
                     this.dataHolder.sheets[sheetName].start_col = sheetData.start_col || 1;
                 }
 
-                this.dataHolder.sheets[sheetName].cells = sheetData.cells || [];
+                // Load cells with metadata
+                this.dataHolder.sheets[sheetName].cells = (sheetData.cells || []).map(cell => ({
+                    cell: cell.cell,
+                    data: cell.data,
+                    metadata: cell.metadata || null
+                }));
             }
 
             if (data.currentSheet && this.dataHolder.sheets[data.currentSheet]) {
@@ -305,44 +485,14 @@ export default class AppController {
         }
         return false;
     }
+}
 
-    async loadActions() {
-    try {
-        // File actions
-        const OpenAction = await window.classLoader.loadClass('OpenAction');
-        const SaveAction = await window.classLoader.loadClass('SaveAction');
-        const ExportCSVAction = await window.classLoader.loadClass('ExportCSVAction');
-
-        // Navigation actions - Edge movements
-        const ActionMoveToTop = await window.classLoader.loadClass('ActionMoveToTop');
-        const ActionMoveToBottom = await window.classLoader.loadClass('ActionMoveToBottom');
-        const ActionMoveToLeft = await window.classLoader.loadClass('ActionMoveToLeft');
-        const ActionMoveToRight = await window.classLoader.loadClass('ActionMoveToRight');
-
-        // Navigation actions - Step movements
-        const ActionStepUp = await window.classLoader.loadClass('ActionStepUp');
-        const ActionStepDown = await window.classLoader.loadClass('ActionStepDown');
-        const ActionStepLeft = await window.classLoader.loadClass('ActionStepLeft');
-        const ActionStepRight = await window.classLoader.loadClass('ActionStepRight');
-
-        // Register all actions
-        this.actions.set('open', new OpenAction(this));
-        this.actions.set('save', new SaveAction(this));
-        this.actions.set('export-csv', new ExportCSVAction(this));
-
-        this.actions.set('move-to-top', new ActionMoveToTop(this));
-        this.actions.set('move-to-bottom', new ActionMoveToBottom(this));
-        this.actions.set('move-to-left', new ActionMoveToLeft(this));
-        this.actions.set('move-to-right', new ActionMoveToRight(this));
-
-        this.actions.set('step-up', new ActionStepUp(this));
-        this.actions.set('step-down', new ActionStepDown(this));
-        this.actions.set('step-left', new ActionStepLeft(this));
-        this.actions.set('step-right', new ActionStepRight(this));
-    } catch (error) {
-        console.error('Failed to load actions:', error);
+// Make handleContextMenu available globally for fallback
+window.handleContextMenuGlobal = (event, cellId) => {
+    if (window.app) {
+        window.app.handleContextMenu(event, cellId);
+    } else {
+        console.error('App not initialized yet');
+        alert('Application not fully initialized. Please refresh the page.');
     }
-}
-
-
-}
+};
