@@ -98,7 +98,38 @@ export default class DataHolder {
 
     updateViewport(sheetName, start_row, start_col) {
         const sheet = this.sheets[sheetName];
-        sheet.start_row = start_row;
-        sheet.start_col = start_col;
+        // Ensure start_row and start_col are within valid ranges
+        const MAX_ROW = 999;
+        const MAX_COL = 18278;
+        const VIEWPORT_HEIGHT = 7;
+        const VIEWPORT_WIDTH = 7;
+
+        // Clamp values
+        let validStartRow = Math.max(1, Math.min(start_row, MAX_ROW - VIEWPORT_HEIGHT + 1));
+        let validStartCol = Math.max(1, Math.min(start_col, MAX_COL - VIEWPORT_WIDTH + 1));
+
+        sheet.start_row = validStartRow;
+        sheet.start_col = validStartCol;
     }
+
+    // In DataHolder.js, add these helper methods:
+    colNameToColNumber(colName) {
+        let result = 0;
+        for (let i = 0; i < colName.length; i++) {
+            result = result * 26 + (colName.charCodeAt(i) - 64);
+        }
+        return result;
+    }
+
+    colNumberToColName(colNum) {
+        let result = '';
+        let num = colNum;
+        while (num > 0) {
+            num--;
+            result = String.fromCharCode(65 + (num % 26)) + result;
+            num = Math.floor(num / 26);
+        }
+        return result;
+    }
+
 }

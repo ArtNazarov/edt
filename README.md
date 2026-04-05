@@ -1,12 +1,16 @@
 # Editable Table Viewport with Formula Support
 
-A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, reactive formula computation, main menu, command line interface, context menu, cell tips, and file operations.
+A JavaScript application that displays an editable spreadsheet-like table with viewport navigation, multiple sheet support, reactive formula computation, main menu, command line interface, context menu, cell tips, advanced selection features, and file operations.
 
 ## Screenshots
 
 ![UI](https://dl.dropbox.com/scl/fi/ppuzeijjt37vvyxsr54nx/tips.png?rlkey=t05p0zh7zhon2swdbo44j86bx&st=xrofpbil)
 
 ![Tests](https://dl.dropbox.com/scl/fi/vvj660ptyqiab597h4qro/sumproduct_test.png?rlkey=pagckitohaibwb1mjpe77shqs&st=zuraol74)
+
+![Selections: Parts](https://dl.dropbox.com/scl/fi/k5s9bxiyzbtmcq5t2s86c/selections.png?rlkey=7z0tc7o4ilh6s18tvmtvq51bw&st=6q9akev7)
+
+![Selections: Whole](https://dl.dropbox.com/scl/fi/l5ceytd6r08zfmqmyb0tm/selections_whole.png?rlkey=ey80fwgysiolntu8kcp9hmtk0&st=694o0s5e)
 
 ## Features
 
@@ -18,9 +22,17 @@ A JavaScript application that displays an editable spreadsheet-like table with v
   - Cell references (e.g., `A1`, `B2`, `ZZ14`)
   - Range references (e.g., `A1:C3`)
   - Cross-sheet references (e.g., `first.A1`, `second.B3`)
-- **Main Menu Bar:** File, Edit, View, Help menus with keyboard shortcuts
+- **Main Menu Bar:** File, Edit, Selection, Navigation, View, Help menus with keyboard shortcuts
 - **Command Line Interface:** Execute commands with history and auto-completion
 - **File Operations:** Open/Save `.edt` files, Export to CSV
+- **Advanced Selection System:** 
+  - Column selection (click column headers)
+  - Row selection (click row headers)
+  - Individual cell selection (Ctrl+Click)
+  - Range selection (Shift+Arrow keys or Shift+Click)
+  - Select All (Ctrl+A)
+  - Clear selection (Esc)
+  - Per-sheet selection persistence
 - **Context Menu:** Right-click on any cell for quick actions
 - **Cell Tips:** Add, show, hide, edit, and delete sticky notes for any cell
 - **Copy/Cut/Paste:** Full clipboard support with metadata preservation
@@ -28,12 +40,73 @@ A JavaScript application that displays an editable spreadsheet-like table with v
   - **Formulas Mode:** Shows actual formulas (e.g., `=SUM(A1:A3)`)
   - **Results Mode:** Shows computed values
 - **Reactive Computation:** Formulas automatically recalculate when referenced cells change
-- **Cell Editing:** Click any cell to edit its content
+- **Cell Editing:** Double-click any cell to edit its content
 - **Viewport Navigation:** Move the viewport around a virtual grid:
-  - Move to top/bottom/left/right edges
-  - Step up/down/left/right one row/column at a time
+  - Move to top/bottom/left/right edges (Page Up/Down, Home/End)
+  - Step up/down/left/right one row/column at a time (Ctrl+Page Up/Down, Ctrl+Home/End)
+  - Arrow key navigation with auto-scroll
 - **Large Virtual Grid:** Supports up to 999 rows and columns up to ZZZ (18,278 columns)
-- **Position Indicator:** Shows current viewport range and active mode
+- **Position & Selection Indicator:** Shows current viewport range, active mode, and selection status
+
+---
+
+## Selection System
+
+The application features a comprehensive selection system that allows you to select cells, rows, columns, and ranges with visual feedback.
+
+### Selection Methods
+
+| Method | Action | Description |
+|--------|--------|-------------|
+| **Click column header** | Select entire column | Click on any column letter (A, B, C, etc.) |
+| **Click row header** | Select entire row | Click on any row number (1, 2, 3, etc.) |
+| **Ctrl+Click on cell** | Toggle cell selection | Add or remove individual cell from selection |
+| **Shift+Click on cell** | Range selection | Select range from current focus to clicked cell |
+| **Shift+Arrow keys** | Extend range | Expand selection from current focus |
+| **Ctrl+A** | Select all | Select all cells in the entire sheet |
+| **Esc** | Clear selection | Remove all current selections |
+
+### Selection Visual Feedback
+
+| Selection Type | Color | Description |
+|----------------|-------|-------------|
+| Column selection | Blue background | Entire column highlighted |
+| Row selection | Red background | Entire row highlighted |
+| Individual cell | Green background | Selected cells highlighted |
+| Range selection | Purple background | Rectangular range highlighted |
+| Select All | Light green background | All visible cells highlighted |
+| Focus cell | Green thick border | Current active cell indicator |
+
+### Selection Status Display
+
+A selection status bar at the top of the application shows:
+- **"All Cells Selected"** when entire sheet is selected
+- **Column names** when columns are selected
+- **Row numbers** when rows are selected
+- **Range addresses** (e.g., `A1:C3`) when ranges are selected
+- **Cell addresses** when individual cells are selected
+
+### Selection Persistence
+
+- Selections are saved per sheet (each sheet maintains its own selection state)
+- Selections are preserved when switching between sheets
+- Selections are saved to `.edt` files and restored on open
+- Focus cell position is saved and restored
+
+### Keyboard Navigation with Selection
+
+| Key Combination | Action |
+|-----------------|--------|
+| `↑` `↓` `←` `→` | Move focus (auto-scrolls viewport) |
+| `Shift` + `↑` `↓` `←` `→` | Extend range selection |
+| `Page Up` | Move to top edge |
+| `Page Down` | Move to bottom edge |
+| `Home` | Move to left edge |
+| `End` | Move to right edge |
+| `Ctrl+Page Up` | Step up one row |
+| `Ctrl+Page Down` | Step down one row |
+| `Ctrl+Home` | Step left one column |
+| `Ctrl+End` | Step right one column |
 
 ---
 
@@ -97,6 +170,26 @@ The application features a comprehensive main menu bar with the following menus 
 |-----------|--------|-------------|
 | Formulas Mode | Switch to formulas view | Display cell formulas instead of computed values |
 | Results Mode | Switch to results view | Display computed values instead of formulas |
+
+### Selection Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Select All | Select entire sheet | `Ctrl+A` | Select all cells in the spreadsheet |
+| Clear Selection | Remove all selections | `Esc` | Clear all current selections |
+
+### Navigation Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Move to Top | Go to top edge | `Page Up` | Move viewport to the top of the sheet |
+| Move to Bottom | Go to bottom edge | `Page Down` | Move viewport to the bottom of the sheet |
+| Move to Left Edge | Go to left edge | `Home` | Move viewport to the left edge |
+| Move to Right Edge | Go to right edge | `End` | Move viewport to the right edge |
+| Step Up | Move up one row | `Ctrl+Page Up` | Move viewport up one row |
+| Step Down | Move down one row | `Ctrl+Page Down` | Move viewport down one row |
+| Step Left | Move left one column | `Ctrl+Home` | Move viewport left one column |
+| Step Right | Move right one column | `Ctrl+End` | Move viewport right one column |
 
 ### View Menu
 
@@ -174,25 +267,53 @@ The command line interface provides a developer-friendly way to control the spre
 
 ## Keyboard Shortcuts
 
+### File Operations
+
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+O` | Open .edt file |
 | `Ctrl+S` | Save .edt file |
 | `Ctrl+E` | Export to CSV |
+
+### Edit Operations
+
+| Shortcut | Action |
+|----------|--------|
 | `Ctrl+C` | Copy selected cell |
 | `Ctrl+X` | Cut selected cell |
 | `Ctrl+V` | Paste to selected cell |
+| `Double-click` | Edit cell content |
+
+### Selection Operations
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+A` | Select all cells |
+| `Esc` | Clear all selections |
+| `Shift+Click` | Range selection |
+| `Ctrl+Click` | Toggle cell selection |
+
+### Navigation
+
+| Shortcut | Action |
+|----------|--------|
+| `↑` `↓` `←` `→` | Move focus (auto-scroll) |
+| `Shift` + `↑` `↓` `←` `→` | Extend range selection |
+| `Page Up` | Move to top edge |
+| `Page Down` | Move to bottom edge |
+| `Home` | Move to left edge |
+| `End` | Move to right edge |
+| `Ctrl+Page Up` | Step up one row |
+| `Ctrl+Page Down` | Step down one row |
+| `Ctrl+Home` | Step left one column |
+| `Ctrl+End` | Step right one column |
+
+### System
+
+| Shortcut | Action |
+|----------|--------|
 | `F5` | Refresh view |
-| `Ctrl+`` ` | Focus command line |
-| `↑` | Move viewport up one row |
-| `↓` | Move viewport down one row |
-| `←` | Move viewport left one column |
-| `→` | Move viewport right one column |
-| `Shift+↑` | Move to top edge |
-| `Shift+↓` | Move to bottom edge |
-| `Shift+←` | Move to left edge |
-| `Shift+→` | Move to right edge |
-| `Esc` (in command line) | Clear input or hide command line |
+| `Ctrl+`` ` | Toggle command line |
 
 ---
 
@@ -454,13 +575,16 @@ The application follows a clean modular MVC-like architecture with separate conc
 | `DataHolder` | Stores all sheet data and provides CRUD operations |
 | `ViewModel` | Provides computed properties for view state |
 | `SheetView` | Renders the 7x7 viewport as an HTML table |
-| `NavButtonsController` | Handles viewport navigation button clicks |
+| `NavButtonsController` | Handles viewport navigation |
 | `CellsEditablesController` | Manages cell edit events |
 | `AppController` | Orchestrates all components |
 | `MainMenu` | Creates and manages the main menu bar |
 | `CommandLine` | Provides command line interface |
 | `UITip` | Manages cell tip display |
 | `PopupContextMenu` | Handles right-click context menu |
+| `SelectionDataHolder` | Stores selection data per sheet |
+| `SelectionViewDrawer` | Applies selection styles to cells |
+| `SelectionManager` | Manages selection events and state |
 
 ### Actions (`/actions`)
 
@@ -471,6 +595,8 @@ The application follows a clean modular MVC-like architecture with separate conc
 | `ExportCSVAction` | Export current sheet to CSV |
 | `ActionMoveToTop/Bottom/Left/Right` | Edge navigation actions |
 | `ActionStepUp/Down/Left/Right` | Step navigation actions |
+| `MoveFocusUp/Down/Left/RightAction` | Focus movement actions |
+| `SelectAllCellsAction` | Select all cells action |
 | `ActionCopy` | Copy cell content to clipboard |
 | `ActionCut` | Cut cell content to clipboard |
 | `ActionPaste` | Paste clipboard content to cell |
@@ -521,7 +647,10 @@ The application follows a clean modular MVC-like architecture with separate conc
 │   ├── MainMenu.js
 │   ├── CommandLine.js
 │   ├── UITip.js
-│   └── PopupContextMenu.js
+│   ├── PopupContextMenu.js
+│   ├── SelectionDataHolder.js
+│   ├── SelectionViewDrawer.js
+│   └── SelectionManager.js
 ├── actions/              # Action components
 │   ├── OpenAction.js
 │   ├── SaveAction.js
@@ -534,6 +663,11 @@ The application follows a clean modular MVC-like architecture with separate conc
 │   ├── ActionStepDown.js
 │   ├── ActionStepLeft.js
 │   ├── ActionStepRight.js
+│   ├── MoveFocusUpAction.js
+│   ├── MoveFocusDownAction.js
+│   ├── MoveFocusLeftAction.js
+│   ├── MoveFocusRightAction.js
+│   ├── SelectAllCellsAction.js
 │   ├── ActionCopy.js
 │   ├── ActionCut.js
 │   ├── ActionPaste.js
@@ -570,18 +704,29 @@ The application follows a clean modular MVC-like architecture with separate conc
    - Click **File → Open .edt** to load a saved spreadsheet
    - Click **File → Save .edt** to save your work
    - Click **File → Export to CSV** to export the current sheet
+   - Click **Selection → Select All** to select all cells
+   - Click **Selection → Clear Selection** to clear selections
 
-4. **Command Line:**
+4. **Selection:**
+   - Click column headers (A, B, C...) to select entire columns
+   - Click row headers (1, 2, 3...) to select entire rows
+   - `Ctrl+Click` on cells to toggle individual cell selection
+   - `Shift+Click` on cells to create range selections
+   - Use `Shift+Arrow keys` to extend range selection
+   - Press `Ctrl+A` to select all cells
+   - Press `Esc` to clear all selections
+
+5. **Command Line:**
    - Press `Ctrl+`` (backtick) to focus the command input
    - Type `help` to see available commands
    - Use `↑` and `↓` to navigate command history
 
-5. **Context Menu (Right-Click):**
+6. **Context Menu (Right-Click):**
    - Right-click any cell to open the context menu
    - Use **Edit** submenu for Copy, Cut, Paste
    - Use **Tips** submenu to manage cell sticky notes
 
-6. **Cell Tips:**
+7. **Cell Tips:**
    - Right-click a cell → Tips → Add Tip
    - Enter your tip text
    - The tip appears as a yellow bubble near the cell
@@ -589,20 +734,21 @@ The application follows a clean modular MVC-like architecture with separate conc
    - Use Edit to change text
    - Use Delete to remove permanently
 
-7. **Mode Switching:**
+8. **Mode Switching:**
    - Click **Edit → Formulas Mode** to view/edit formulas
    - Click **Edit → Results Mode** to see calculated values
 
-8. **Editing Cells:**
-   - Click any cell to edit its content
+9. **Editing Cells:**
+   - Double-click any cell to edit its content
    - Enter formulas starting with `=` (e.g., `=SUM(A1:A3)`)
    - Press Tab or click elsewhere to save
 
-9. **Navigation:**
-   - Use the navigation buttons or arrow keys to move the viewport
-   - Use Shift+Arrow keys to move to edges
+10. **Navigation:**
+    - Use arrow keys to move focus (auto-scrolls viewport)
+    - Use Page Up/Down, Home/End for edge navigation
+    - Use Ctrl+Page Up/Down, Ctrl+Home/End for step navigation
 
-10. **Sheet Management:**
+11. **Sheet Management:**
     - Click sheet names at the top to switch between sheets
     - Use cross-sheet references to link data between sheets
 
@@ -610,7 +756,7 @@ The application follows a clean modular MVC-like architecture with separate conc
 
 ## Data Persistence
 
-Cell data is stored in memory and can be saved to/loaded from `.edt` JSON files. Tips and metadata are preserved across saves. Example data included:
+Cell data is stored in memory and can be saved to/loaded from `.edt` JSON files. Tips, metadata, and selections are preserved across saves. Example data included:
 
 **First Sheet:**
 - A1: `"Some data"`
@@ -674,6 +820,7 @@ Error cells are highlighted in red in Results Mode for easy identification.
 - **Modular Architecture:** Each component is in its own file for maintainability
 - **Metadata Support:** Cell metadata for tips and future extensions
 - **Clipboard Integration:** System clipboard support for copy/paste
+- **Per-Sheet Selection:** Each sheet maintains its own selection state
 
 ---
 
@@ -704,7 +851,23 @@ Free to use and modify, MIT License
 
 ## Version History
 
-### v1.5.0 (Current)
+### v1.6.0 (Current)
+- Added comprehensive selection system
+- Added column selection (click column headers)
+- Added row selection (click row headers)
+- Added individual cell selection (Ctrl+Click)
+- Added range selection (Shift+Arrow keys or Shift+Click)
+- Added Select All (Ctrl+A) with visual feedback
+- Added Clear Selection (Esc)
+- Added per-sheet selection persistence
+- Added selection status display
+- Added Selection menu in main menu bar
+- Added MoveFocus actions for keyboard navigation
+- Added SelectAllCellsAction
+- Improved viewport auto-scroll during selection
+- Enhanced visual feedback with color-coded selections
+
+### v1.5.0
 - Added Context Menu (right-click) with dynamic Tip management
 - Added Cell Tips feature with full CRUD operations
 - Added Copy, Cut, Paste functionality with metadata preservation

@@ -1,4 +1,4 @@
-// SaveAction - Handles saving spreadsheet data to .edt JSON files with metadata
+// SaveAction - Handles saving spreadsheet data to .edt JSON files with metadata and selection
 export default class SaveAction {
     constructor(appController) {
         this.appController = appController;
@@ -15,8 +15,23 @@ export default class SaveAction {
                     savedAt: new Date().toISOString(),
                     appVersion: data.version,
                     includesTips: true,
-                    includesCellMetadata: true
+                    includesCellMetadata: true,
+                    includesSelection: !!this.appController.selectionManager
                 };
+
+                // Add selection data separately if available (already included in getAllSheetData)
+                // but we add additional metadata about selection
+                if (this.appController.selectionManager) {
+                    const selectionInfo = this.appController.selectionManager.getSelectionInfo();
+                    data.selectionMetadata = {
+                        hasSelection: true,
+                        totalSelectedCells: selectionInfo.totalCells,
+                        selectedColumnsCount: selectionInfo.selectedColumns.length,
+                        selectedRowsCount: selectionInfo.selectedRows.length,
+                        selectedRangesCount: selectionInfo.selectedRanges.length,
+                        selectedCellsCount: selectionInfo.selectedCells.length
+                    };
+                }
 
                 // Convert to JSON string with pretty formatting
                 const jsonString = JSON.stringify(data, null, 2);
@@ -42,9 +57,15 @@ export default class SaveAction {
                     URL.revokeObjectURL(url);
                 }, 100);
 
-                // Count total tips for feedback
+                // Count total tips and selections for feedback
                 const tipCount = this.countTotalTips(data);
-                this.showMessage(`Successfully saved to: ${filename}${tipCount > 0 ? ` (${tipCount} tips included)` : ''}`, 'success');
+                const selectionCount = data.selectionMetadata?.totalSelectedCells || 0;
+
+                let message = `Successfully saved to: ${filename}`;
+                if (tipCount > 0) message += ` (${tipCount} tips)`;
+                if (selectionCount > 0) message += ` (${selectionCount} selected cells)`;
+
+                this.showMessage(message, 'success');
                 resolve(true);
             } catch (error) {
                 console.error('Error saving file:', error);
@@ -56,12 +77,14 @@ export default class SaveAction {
 
     countTotalTips(data) {
         let tipCount = 0;
-        for (const sheetName of Object.keys(data.sheets)) {
-            const sheet = data.sheets[sheetName];
-            if (sheet.cells) {
-                for (const cell of sheet.cells) {
-                    if (cell.metadata && cell.metadata.tip) {
-                        tipCount++;
+        if (data.sheets) {
+            for (const sheetName of Object.keys(data.sheets)) {
+                const sheet = data.sheets[sheetName];
+                if (sheet.cells) {
+                    for (const cell of sheet.cells) {
+                        if (cell.metadata && cell.metadata.tip) {
+                            tipCount++;
+                        }
                     }
                 }
             }
@@ -96,6 +119,8 @@ export default class SaveAction {
             z-index: 10000;
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
         `;
 
         // Add animation styles if not present

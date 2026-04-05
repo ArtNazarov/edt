@@ -48,6 +48,59 @@ export default class MainMenu {
                         </div>
                     </div>
                 </div>
+                <div class="menu-item" data-menu="selection">
+                    Selection
+                    <div class="submenu" data-submenu="selection">
+                        <div class="submenu-item" data-action="select-all">
+                            <span class="menu-icon">✅</span> Select All
+                            <span class="menu-shortcut">Ctrl+A</span>
+                        </div>
+                        <div class="submenu-divider"></div>
+                        <div class="submenu-item" data-action="clear-selection">
+                            <span class="menu-icon">❌</span> Clear Selection
+                            <span class="menu-shortcut">Esc</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="menu-item" data-menu="navigation">
+                    Navigation
+                    <div class="submenu" data-submenu="navigation">
+                        <div class="submenu-item" data-action="move-to-top">
+                            <span class="menu-icon">⬆️</span> Move to Top
+                            <span class="menu-shortcut">Page Up</span>
+                        </div>
+                        <div class="submenu-item" data-action="move-to-bottom">
+                            <span class="menu-icon">⬇️</span> Move to Bottom
+                            <span class="menu-shortcut">Page Down</span>
+                        </div>
+                        <div class="submenu-divider"></div>
+                        <div class="submenu-item" data-action="move-to-left">
+                            <span class="menu-icon">⬅️</span> Move to Left Edge
+                            <span class="menu-shortcut">Home</span>
+                        </div>
+                        <div class="submenu-item" data-action="move-to-right">
+                            <span class="menu-icon">➡️</span> Move to Right Edge
+                            <span class="menu-shortcut">End</span>
+                        </div>
+                        <div class="submenu-divider"></div>
+                        <div class="submenu-item" data-action="step-up">
+                            <span class="menu-icon">⬆️</span> Step Up
+                            <span class="menu-shortcut">Ctrl+Page Up</span>
+                        </div>
+                        <div class="submenu-item" data-action="step-down">
+                            <span class="menu-icon">⬇️</span> Step Down
+                            <span class="menu-shortcut">Ctrl+Page Down</span>
+                        </div>
+                        <div class="submenu-item" data-action="step-left">
+                            <span class="menu-icon">⬅️</span> Step Left
+                            <span class="menu-shortcut">Ctrl+Home</span>
+                        </div>
+                        <div class="submenu-item" data-action="step-right">
+                            <span class="menu-icon">➡️</span> Step Right
+                            <span class="menu-shortcut">Ctrl+End</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="menu-item" data-menu="view">
                     View
                     <div class="submenu" data-submenu="view">
@@ -132,6 +185,36 @@ export default class MainMenu {
             case 'results-mode':
                 this.appController.setFormulasMode(false);
                 break;
+            case 'select-all':
+                this.appController.selectionManager?.selectAll();
+                break;
+            case 'clear-selection':
+                this.appController.selectionManager?.clearAllSelections();
+                break;
+            case 'move-to-top':
+                this.appController.navController?.moveToTop();
+                break;
+            case 'move-to-bottom':
+                this.appController.navController?.moveToBottom();
+                break;
+            case 'move-to-left':
+                this.appController.navController?.moveToLeft();
+                break;
+            case 'move-to-right':
+                this.appController.navController?.moveToRight();
+                break;
+            case 'step-up':
+                this.appController.navController?.stepUp();
+                break;
+            case 'step-down':
+                this.appController.navController?.stepDown();
+                break;
+            case 'step-left':
+                this.appController.navController?.stepLeft();
+                break;
+            case 'step-right':
+                this.appController.navController?.stepRight();
+                break;
             case 'refresh':
                 this.appController.refreshView();
                 break;
@@ -164,15 +247,17 @@ export default class MainMenu {
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Version:</strong> 1.3.0</p>
+                    <p><strong>Version:</strong> 1.6.0</p>
                     <p><strong>Features:</strong></p>
                     <ul>
                         <li>AST-based formula computation engine</li>
                         <li>Support for SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT, VLOOKUP</li>
                         <li>Cross-sheet references</li>
                         <li>Multiple worksheets</li>
-                        <li>7x7 viewport with navigation</li>
-                        <li>Open/Save .edt files</li>
+                        <li>7x7 viewport with keyboard navigation</li>
+                        <li>Cell tips and comments</li>
+                        <li>Selection management (columns, rows, ranges)</li>
+                        <li>Open/Save .edt files with metadata</li>
                     </ul>
                     <p><strong>License:</strong> MIT</p>
                 </div>
@@ -212,12 +297,29 @@ export default class MainMenu {
                         <tr><td><kbd>Ctrl</kbd> + <kbd>O</kbd></td><td>Open .edt file</td></tr>
                         <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Save .edt file</td></tr>
                         <tr><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td><td>Export to CSV</td></tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td><td>Copy selected cell</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>X</kbd></td><td>Cut selected cell</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>V</kbd></td><td>Paste to selected cell</td></tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>A</kbd></td><td>Select all cells</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Clear all selections</td></tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                        <tr><td><kbd>Page Up</kbd></td><td>Move to top edge</td></tr>
+                        <tr><td><kbd>Page Down</kbd></td><td>Move to bottom edge</td></tr>
+                        <tr><td><kbd>Home</kbd></td><td>Move to left edge</td></tr>
+                        <tr><td><kbd>End</kbd></td><td>Move to right edge</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>Page Up</kbd></td><td>Step up one row</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>Page Down</kbd></td><td>Step down one row</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd></td><td>Step left one column</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>End</kbd></td><td>Step right one column</td></tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                        <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Move focus (auto-scroll)</td></tr>
+                        <tr><td><kbd>Shift</kbd> + <kbd>↑↓←→</kbd></td><td>Extend range selection</td></tr>
+                        <tr><td colspan="2"><hr></td></tr>
+                        <tr><td><kbd>Double-click</kbd></td><td>Edit cell content</td></tr>
+                        <tr><td><kbd>Ctrl</kbd> + <kbd>\`</kbd></td><td>Toggle command line</td></tr>
                         <tr><td><kbd>F5</kbd></td><td>Refresh view</td></tr>
-                        <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>Navigate viewport (Step)</td></tr>
-                        <tr><td><kbd>Shift</kbd> + <kbd>↑</kbd></td><td>Move to top edge</td></tr>
-                        <tr><td><kbd>Shift</kbd> + <kbd>↓</kbd></td><td>Move to bottom edge</td></tr>
-                        <tr><td><kbd>Shift</kbd> + <kbd>←</kbd></td><td>Move to left edge</td></tr>
-                        <tr><td><kbd>Shift</kbd> + <kbd>→</kbd></td><td>Move to right edge</td></tr>
                     </table>
                 </div>
                 <div class="modal-footer">

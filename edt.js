@@ -26,6 +26,11 @@ class ClassLoader {
             'UITip': './classes/UITip.js',
             'PopupContextMenu': './classes/PopupContextMenu.js',
 
+            // Selection classes
+            'SelectionDataHolder': './classes/SelectionDataHolder.js',
+            'SelectionViewDrawer': './classes/SelectionViewDrawer.js',
+            'SelectionManager': './classes/SelectionManager.js',
+
             // File actions
             'OpenAction': './actions/OpenAction.js',
             'SaveAction': './actions/SaveAction.js',
@@ -53,7 +58,16 @@ class ClassLoader {
             // Edit actions
             'ActionCopy': './actions/ActionCopy.js',
             'ActionCut': './actions/ActionCut.js',
-            'ActionPaste': './actions/ActionPaste.js'
+            'ActionPaste': './actions/ActionPaste.js',
+
+            // Focus moving actions
+            'MoveFocusUpAction': './actions/MoveFocusUpAction.js',
+            'MoveFocusDownAction': './actions/MoveFocusDownAction.js',
+            'MoveFocusLeftAction': './actions/MoveFocusLeftAction.js',
+            'MoveFocusRightAction': './actions/MoveFocusRightAction.js',
+
+            // Select All action
+            'SelectAllCellsAction': './actions/SelectAllCellsAction.js'
         };
     }
 
@@ -76,18 +90,18 @@ class ClassLoader {
 
         // Load the class module dynamically
         const loadPromise = import(filePath)
-        .then(module => {
-            const cls = module.default;
-            this.classes.set(className, cls);
-            this.loadingPromises.delete(className);
-            console.log(`Class loaded: ${className}`);
-            return cls;
-        })
-        .catch(error => {
-            this.loadingPromises.delete(className);
-            console.error(`Failed to load class ${className} from ${filePath}:`, error);
-            throw new Error(`Class ${className} not available: ${error.message}`);
-        });
+            .then(module => {
+                const cls = module.default;
+                this.classes.set(className, cls);
+                this.loadingPromises.delete(className);
+                console.log(`Class loaded: ${className}`);
+                return cls;
+            })
+            .catch(error => {
+                this.loadingPromises.delete(className);
+                console.error(`Failed to load class ${className} from ${filePath}:`, error);
+                throw new Error(`Class ${className} not available: ${error.message}`);
+            });
 
         this.loadingPromises.set(className, loadPromise);
         return loadPromise;
@@ -139,16 +153,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (errorContainer) {
             errorContainer.innerHTML = `
             <div style="color: red; padding: 20px; text-align: center; background: #ffe6e6; border: 1px solid #ffcccc; border-radius: 8px; margin: 20px;">
-            <h3>Failed to load application</h3>
-            <p>Please check the following:</p>
-            <ul style="text-align: left; display: inline-block;">
-            <li>All class files exist in the <code>/classes</code> folder</li>
-            <li>All action files exist in the <code>/actions</code> folder</li>
-            <li>You are running from a web server (not file:// protocol)</li>
-            <li>Check the browser console for more details</li>
-            </ul>
-            <p><strong>Error:</strong> ${error.message}</p>
-            <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Reload Page</button>
+                <h3>Failed to load application</h3>
+                <p>Please check the following:</p>
+                <ul style="text-align: left; display: inline-block;">
+                    <li>All class files exist in the <code>/classes</code> folder</li>
+                    <li>All action files exist in the <code>/actions</code> folder</li>
+                    <li>You are running from a web server (not file:// protocol)</li>
+                    <li>Check the browser console for more details</li>
+                </ul>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Reload Page</button>
             </div>
             `;
         }
@@ -169,9 +183,9 @@ setTimeout(() => {
         if (container && container.innerHTML.includes('Loading application')) {
             container.innerHTML = `
             <div style="color: #856404; padding: 20px; text-align: center; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; margin: 20px;">
-            <h3>Loading taking longer than expected...</h3>
-            <p>Please check your network connection and ensure all files are accessible.</p>
-            <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Reload Page</button>
+                <h3>Loading taking longer than expected...</h3>
+                <p>Please check your network connection and ensure all files are accessible.</p>
+                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; cursor: pointer;">Reload Page</button>
             </div>
             `;
         }

@@ -1,4 +1,4 @@
-// OpenAction - Handles opening .edt JSON files with metadata
+// OpenAction - Handles opening .edt JSON files with metadata and selection restoration
 export default class OpenAction {
     constructor(appController) {
         this.appController = appController;
@@ -29,8 +29,14 @@ export default class OpenAction {
 
                         // Report metadata info if present
                         const tipCount = this.countTotalTips(data);
+                        const selectionCount = data.selectionMetadata?.totalSelectedCells || 0;
                         const metadataInfo = data.metadata ? ` (v${data.metadata.appVersion || 'unknown'})` : '';
-                        this.showMessage(`Successfully opened file: ${file.name}${metadataInfo}${tipCount > 0 ? ` - ${tipCount} tips loaded` : ''}`, 'success');
+
+                        let message = `Successfully opened file: ${file.name}${metadataInfo}`;
+                        if (tipCount > 0) message += ` - ${tipCount} tips loaded`;
+                        if (selectionCount > 0) message += `, ${selectionCount} selections restored`;
+
+                        this.showMessage(message, 'success');
                         resolve(true);
                     } else {
                         this.showMessage('Invalid .edt file format', 'error');
@@ -104,6 +110,16 @@ export default class OpenAction {
             }
         }
 
+        // Validate selection data if present (optional)
+        if (data.selection) {
+            if (typeof data.selection !== 'object') return false;
+            // Selection data structure is flexible, just ensure it's an object
+            if (data.selection.selectedColumns && !Array.isArray(data.selection.selectedColumns)) return false;
+            if (data.selection.selectedRows && !Array.isArray(data.selection.selectedRows)) return false;
+            if (data.selection.selectedRanges && !Array.isArray(data.selection.selectedRanges)) return false;
+            if (data.selection.selectedCells && !Array.isArray(data.selection.selectedCells)) return false;
+        }
+
         return true;
     }
 
@@ -123,6 +139,8 @@ export default class OpenAction {
             z-index: 10000;
             animation: slideIn 0.3s ease-out;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
         `;
 
         // Add animation styles if not present

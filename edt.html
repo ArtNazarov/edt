@@ -47,26 +47,30 @@
         h1, h2 {
             color: #333;
         }
+
+        /* Selection status info styles */
+        .selection-status-info {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #e8f4fd;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #0b5e7e;
+        }
+        .selection-status-info span {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div id="main-menu-container"></div>
     <div id="command-line-container"></div>
+    <div id="selection-status-info" class="selection-status-info"> Selection: <span id="selection-status-text">None</span></div>
     <div id="table-container"></div>
     <div id="sheets-nav" class="sheets"></div>
     <div id="position-info"></div>
-
-    <div class="controls">
-        <button onclick="moveToTop()">Move to top</button>
-        <button onclick="moveToBottom()">Move to bottom</button>
-        <button onclick="stepUp()">Step up</button>
-        <button onclick="stepDown()">Step down</button>
-        <br>
-        <button onclick="moveToLeft()">Move to left</button>
-        <button onclick="moveToRight()">Move to right</button>
-        <button onclick="stepLeft()">Step left</button>
-        <button onclick="stepRight()">Step right</button>
-    </div>
 
     <div class="mode-controls">
         <button id="formulas-mode-btn" class="mode-btn active">Switch to Input Formulas Mode</button>

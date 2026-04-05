@@ -7,6 +7,7 @@ import NavButtonsController from './NavButtonsController.js';
 import MainMenu from './MainMenu.js';
 import CommandLine from './CommandLine.js';
 import UITip from './UITip.js';
+import SelectionManager from './SelectionManager.js';
 
 // AppController - Orchestrates all components
 export default class AppController {
@@ -20,6 +21,10 @@ export default class AppController {
         this.commandLine = null;
         this.uiTip = null;
         this.contextMenu = null;
+        this.selectionManager = null;
+        this.navController = null;
+        this.viewModel = null;
+        this.sheetView = null;
         this.init();
     }
 
@@ -29,7 +34,6 @@ export default class AppController {
         this.renderCommandLine();
         this.renderSheetsNav();
         await this.updateViewAndViewModel();
-        this.attachGlobalButtonHandlers();
         this.attachModeButtonHandlers();
         this.attachKeyboardShortcuts();
         this.updatePositionInfo();
@@ -61,6 +65,35 @@ export default class AppController {
         });
     }
 
+    initSelectionManager() {
+        const tableContainer = document.getElementById('table-container');
+        if (tableContainer) {
+            this.selectionManager = new SelectionManager(this, tableContainer);
+            this.selectionManager.onSelectionChange = (selectionInfo) => {
+                this.updateSelectionInfo(selectionInfo);
+            };
+            console.log('Selection Manager initialized successfully');
+        }
+    }
+
+    refreshSelectionManager() {
+        if (this.selectionManager) {
+            const tableContainer = document.getElementById('table-container');
+            this.selectionManager.tableContainer = tableContainer;
+            this.selectionManager.refreshEventListeners();
+            this.selectionManager.render();
+        }
+    }
+
+    updateSelectionInfo(selectionInfo) {
+        // Update position info with selection details (optional)
+        const positionInfo = document.getElementById('position-info');
+        if (positionInfo && selectionInfo) {
+            // Can be used to display selection info in status bar
+            // console.log('Selection updated:', selectionInfo);
+        }
+    }
+
     handleContextMenu(event, cellId) {
         event.preventDefault();
         event.stopPropagation();
@@ -71,7 +104,6 @@ export default class AppController {
             this.contextMenu.show(event.pageX, event.pageY, cellId);
         } else {
             console.warn('Context menu not yet loaded, attempting lazy load...');
-            // Lazy load context menu if not yet loaded
             import('./PopupContextMenu.js').then(module => {
                 const PopupContextMenu = module.default;
                 this.contextMenu = new PopupContextMenu(this);
@@ -187,17 +219,31 @@ export default class AppController {
     }
 
     async updateViewAndViewModel() {
+        // Create ViewModel with appController reference
         this.viewModel = new ViewModel(this.dataHolder, this.dataHolder.currentSheet, this.computationEngine, this.showFormulas);
+        this.viewModel.appController = this; // Pass reference for NavButtonsController
+
+        // Create SheetView
         this.sheetView = new SheetView('table-container', this.viewModel, async (cellId, newValue) => {
             await this.cellsController.handleCellEdit(this.dataHolder.currentSheet, cellId, newValue);
             await this.updateViewAndViewModel();
             this.updatePositionInfo();
         }, this);
+
+        // Create NavButtonsController
         this.navController = new NavButtonsController(this.dataHolder, this.viewModel, async () => {
             await this.updateViewAndViewModel();
             this.updatePositionInfo();
         });
+
         await this.sheetView.render();
+
+        // Initialize or refresh selection manager after view update
+        if (!this.selectionManager) {
+            this.initSelectionManager();
+        } else {
+            this.refreshSelectionManager();
+        }
 
         // Restore tips after view update
         if (this.uiTip) {
@@ -219,7 +265,6 @@ export default class AppController {
 
         for (const cell of sheet.cells) {
             if (cell.metadata && cell.metadata.tip && cell.metadata.tip.visible) {
-                // Small delay to ensure DOM is ready
                 setTimeout(() => {
                     this.uiTip.showTip(cell.cell, cell.metadata.tip.text, false);
                 }, 50);
@@ -228,7 +273,6 @@ export default class AppController {
     }
 
     restoreTips() {
-        // This method is kept for backward compatibility
         this.restoreTipsForCurrentSheet();
     }
 
@@ -259,21 +303,16 @@ export default class AppController {
         await this.updateViewAndViewModel();
         this.updatePositionInfo();
 
+        // Update selection manager for new sheet
+        if (this.selectionManager) {
+            this.selectionManager.data.setCurrentSheet(sheetName);
+            this.selectionManager.render();
+        }
+
         // Restore tips for the new sheet
         if (this.uiTip) {
             this.restoreTipsForCurrentSheet();
         }
-    }
-
-    attachGlobalButtonHandlers() {
-        window.moveToTop = () => this.navController?.moveToTop();
-        window.moveToBottom = () => this.navController?.moveToBottom();
-        window.stepUp = () => this.navController?.stepUp();
-        window.stepDown = () => this.navController?.stepDown();
-        window.moveToLeft = () => this.navController?.moveToLeft();
-        window.moveToRight = () => this.navController?.moveToRight();
-        window.stepLeft = () => this.navController?.stepLeft();
-        window.stepRight = () => this.navController?.stepRight();
     }
 
     attachModeButtonHandlers() {
@@ -301,23 +340,25 @@ export default class AppController {
 
     attachKeyboardShortcuts() {
         document.addEventListener('keydown', async (e) => {
+            const ctrlKey = e.ctrlKey || e.metaKey;
+
             // Ctrl+O: Open file
-            if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+            if (ctrlKey && e.key === 'o') {
                 e.preventDefault();
                 await this.executeAction('open');
             }
             // Ctrl+S: Save file
-            else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            else if (ctrlKey && e.key === 's') {
                 e.preventDefault();
                 await this.executeAction('save');
             }
             // Ctrl+E: Export CSV
-            else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+            else if (ctrlKey && e.key === 'e') {
                 e.preventDefault();
                 await this.executeAction('export-csv');
             }
             // Ctrl+C: Copy
-            else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+            else if (ctrlKey && e.key === 'c') {
                 e.preventDefault();
                 const activeCell = document.activeElement;
                 if (activeCell && activeCell.getAttribute('data-cell')) {
@@ -325,7 +366,7 @@ export default class AppController {
                 }
             }
             // Ctrl+X: Cut
-            else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+            else if (ctrlKey && e.key === 'x') {
                 e.preventDefault();
                 const activeCell = document.activeElement;
                 if (activeCell && activeCell.getAttribute('data-cell')) {
@@ -333,7 +374,7 @@ export default class AppController {
                 }
             }
             // Ctrl+V: Paste
-            else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+            else if (ctrlKey && e.key === 'v') {
                 e.preventDefault();
                 const activeCell = document.activeElement;
                 if (activeCell && activeCell.getAttribute('data-cell')) {
@@ -345,44 +386,50 @@ export default class AppController {
                 e.preventDefault();
                 await this.refreshView();
             }
-            // Ctrl+` or Ctrl+~: Toggle command line
-            else if ((e.ctrlKey || e.metaKey) && e.key === '`') {
-                e.preventDefault();
-                this.commandLine?.toggle();
-            }
-            // Shift+Arrow keys for edge navigation
-            else if (e.shiftKey && e.key === 'ArrowUp') {
+            // Page Up: Move to top
+            else if (e.key === 'PageUp' && !ctrlKey) {
                 e.preventDefault();
                 this.navController?.moveToTop();
             }
-            else if (e.shiftKey && e.key === 'ArrowDown') {
+            // Page Down: Move to bottom
+            else if (e.key === 'PageDown' && !ctrlKey) {
                 e.preventDefault();
                 this.navController?.moveToBottom();
             }
-            else if (e.shiftKey && e.key === 'ArrowLeft') {
+            // Home: Move to left edge
+            else if (e.key === 'Home' && !ctrlKey) {
                 e.preventDefault();
                 this.navController?.moveToLeft();
             }
-            else if (e.shiftKey && e.key === 'ArrowRight') {
+            // End: Move to right edge
+            else if (e.key === 'End' && !ctrlKey) {
                 e.preventDefault();
                 this.navController?.moveToRight();
             }
-            // Arrow keys for step navigation
-            else if (e.key === 'ArrowUp') {
+            // Ctrl+Page Up: Step up
+            else if (ctrlKey && e.key === 'PageUp') {
                 e.preventDefault();
                 this.navController?.stepUp();
             }
-            else if (e.key === 'ArrowDown') {
+            // Ctrl+Page Down: Step down
+            else if (ctrlKey && e.key === 'PageDown') {
                 e.preventDefault();
                 this.navController?.stepDown();
             }
-            else if (e.key === 'ArrowLeft') {
+            // Ctrl+Home: Step left
+            else if (ctrlKey && e.key === 'Home') {
                 e.preventDefault();
                 this.navController?.stepLeft();
             }
-            else if (e.key === 'ArrowRight') {
+            // Ctrl+End: Step right
+            else if (ctrlKey && e.key === 'End') {
                 e.preventDefault();
                 this.navController?.stepRight();
+            }
+            // Ctrl+` or Ctrl+~: Toggle command line
+            else if (ctrlKey && e.key === '`') {
+                e.preventDefault();
+                this.commandLine?.toggle();
             }
         });
     }
@@ -425,7 +472,7 @@ export default class AppController {
         }
     }
 
-    // Method to get all sheet data for save/export (already includes metadata)
+    // Method to get all sheet data for save/export (includes metadata)
     getAllSheetData() {
         const sheetsData = {};
 
@@ -436,19 +483,24 @@ export default class AppController {
                 cells: sheet.cells.map(cell => ({
                     cell: cell.cell,
                     data: cell.data,
-                    metadata: cell.metadata || null  // This preserves tips and other metadata
+                    metadata: cell.metadata || null
                 }))
             };
         }
 
-        return {
-            version: '1.5.0',
+        const exportData = {
+            version: '1.6.0',
             currentSheet: this.dataHolder.currentSheet,
             sheets: sheetsData
         };
+
+        // Add selection data if available
+        if (this.selectionManager) {
+            exportData.selection = this.selectionManager.serialize();
+        }
+
+        return exportData;
     }
-
-
 
     // Method to load sheet data from external source
     async loadSheetData(data) {
@@ -482,6 +534,11 @@ export default class AppController {
             this.renderSheetsNav();
             await this.updateViewAndViewModel();
             this.updatePositionInfo();
+
+            // Restore selection data if available
+            if (data.selection && this.selectionManager) {
+                this.selectionManager.deserialize(data.selection);
+            }
 
             return true;
         }
