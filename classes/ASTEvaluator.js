@@ -164,6 +164,48 @@ export default class ASTEvaluator {
         const left = await this.evaluate(node.left);
         const right = await this.evaluate(node.right);
 
+        // Handle power operator (^)
+        if (node.operator === '^') {
+            // Use the power function logic
+            if (typeof left === 'number' && typeof right === 'number') {
+                // Handle zero base cases
+                if (left === 0 && right === 0) {
+                    return '#NUM!';
+                }
+                // Zero base with negative exponent
+                if (left === 0 && right < 0) {
+                    // Check if exponent is an integer
+                    if (Number.isInteger(right)) {
+                        return '#DIV/0!';
+                    } else {
+                        return '#NUM!';
+                    }
+                }
+                if (left === 0 && right > 0) {
+                    return 0;
+                }
+
+                // Handle negative base with fractional exponent
+                if (left < 0 && !Number.isInteger(right)) {
+                    const nearestInt = Math.round(right);
+                    if (Math.abs(right - nearestInt) > 1e-10) {
+                        return '#NUM!';
+                    }
+                    const result = Math.pow(left, nearestInt);
+                    return Math.round(result * 100) / 100;
+                }
+
+                const result = Math.pow(left, right);
+                if (!isFinite(result) || isNaN(result)) {
+                    if (result === Number.POSITIVE_INFINITY) return Number.POSITIVE_INFINITY;
+                    if (result === Number.NEGATIVE_INFINITY) return Number.NEGATIVE_INFINITY;
+                    return '#NUM!';
+                }
+                return Math.round(result * 100) / 100;
+            }
+            return 0;
+        }
+
         // Handle string concatenation
         if (node.operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
             return String(left) + String(right);

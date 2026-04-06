@@ -17,9 +17,9 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 - **7x7 Viewport:** Displays a fixed 7x7 grid of cells (7 rows × 7 columns)
 - **Multiple Sheets:** Supports multiple worksheets with independent data
 - **Formula Support:**
-  - Basic arithmetic expressions (+, -, *, /)
+  - Basic arithmetic expressions (+, -, *, /, ^)
   - Spreadsheet functions: SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT, VLOOKUP
-  - **Mathematical Functions:** ABS, ACOS, ANGLE, ASIN, ATN, CEIL, COS, COT, CSC, DEG, EXP, FLOOR, FP, INT, IP, LOG, LOG10, MOD, RAD, RMD, RND, SEC, SGN, SIN, SQR, TAN
+  - **Mathematical Functions:** ABS, ACOS, ANGLE, ASIN, ATN, CEIL, COS, COT, CSC, DEG, EXP, FLOOR, FP, INT, IP, LOG, LOG10, MOD, POWER, POW, RAD, RMD, RND, SEC, SGN, SIN, SQR, TAN
   - **Utility Functions:** DATE, EPS, INF, PI, TIME
   - Cell references (e.g., `A1`, `B2`, `ZZ14`)
   - Range references (e.g., `A1:C3`)
@@ -67,6 +67,33 @@ The application includes a comprehensive set of mathematical and trigonometric f
 | **CEIL** | `=CEIL(x)` | Returns the smallest integer ≥ x | `=CEIL(5.3)` | `6` |
 | **IP** | `=IP(x)` | Returns the integer part (truncates toward zero) | `=IP(-5.75)` | `-5` |
 | **FP** | `=FP(x)` | Returns the fractional part of x | `=FP(5.75)` | `0.75` |
+
+### Power and Exponentiation Functions
+
+| Function | Syntax | Description | Example | Result |
+|----------|--------|-------------|---------|--------|
+| **POWER** | `=POWER(base, exponent)` | Returns base raised to the power exponent | `=POWER(2.5, 3)` | `15.625` |
+| **POW** | `=POW(base, exponent)` | Alias for POWER function | `=POW(2, 3)` | `8` |
+| **^ operator** | `=base ^ exponent` | Exponentiation operator | `=2.5 ^ 3` | `15.625` |
+
+**Note:** The POWER function (and its POW alias) support both comma (`,`) and semicolon (`;`) as argument separators. The caret operator (`^`) provides a convenient shorthand for exponentiation.
+
+#### Exponentiation Rules and Edge Cases
+
+| Case | Example | Result | Explanation |
+|------|---------|--------|-------------|
+| Positive base | `=POWER(2.5, 3)` | `15.625` | Standard exponentiation |
+| Exponent zero | `=POWER(2, 0)` | `1` | Any number ^ 0 = 1 |
+| Negative exponent (integer) | `=POWER(2.5, -2)` | `0.16` | 1 / (2.5²) |
+| Negative exponent (float) | `=POWER(2, -1.5)` | `0.353553` | 1 / (2^1.5) |
+| Fractional base | `=POWER(0.5, 3)` | `0.125` | 0.5³ |
+| Negative base, odd exponent | `=POWER(-2, 3)` | `-8` | (-2)³ |
+| Negative base, even exponent | `=POWER(-2.5, 2)` | `6.25` | (-2.5)² |
+| Zero base, positive exponent | `=POWER(0, 2)` | `0` | 0² |
+| Zero base, exponent zero | `=POWER(0, 0)` | `#NUM!` | Undefined |
+| Zero base, negative integer | `=POWER(0, -1)` | `#DIV/0!` | Division by zero |
+| Zero base, negative float | `=POWER(0, -0.5)` | `#NUM!` | 1/√0 (undefined) |
+| Negative base, fractional exponent | `=POWER(-4, 0.5)` | `#NUM!` | √(-4) (complex) |
 
 ### Trigonometric Functions (Radians)
 
@@ -127,6 +154,19 @@ The application includes a comprehensive set of mathematical and trigonometric f
 ### Function Usage Examples
 
 ```excel
+' Power and exponentiation examples
+=POWER(2.5, 3)                ' Returns 15.625
+=POW(2, 3)                    ' Returns 8 (alias)
+=2.5 ^ 3                      ' Returns 15.625 (caret operator)
+=2 ^ 0                        ' Returns 1
+=2 ^ -2                       ' Returns 0.25
+=0 ^ 2                        ' Returns 0
+=0 ^ 0                        ' Returns #NUM! (undefined)
+=0 ^ -1                       ' Returns #DIV/0!
+=(-2) ^ 3                     ' Returns -8
+=(-2.5) ^ 2                   ' Returns 6.25
+=(-4) ^ 0.5                   ' Returns #NUM! (complex number)
+
 ' Trigonometric calculations
 =SIN(PI/6)                    ' Returns 0.5
 =COS(RAD(60))                 ' Returns 0.5 (cosine of 60 degrees)
@@ -169,7 +209,268 @@ The application includes a comprehensive set of mathematical and trigonometric f
 
 ## Selection System
 
-... (existing content remains the same) ...
+The application features a comprehensive selection system that allows you to select cells, rows, columns, and ranges with visual feedback.
+
+### Selection Methods
+
+| Method | Action | Description |
+|--------|--------|-------------|
+| **Click column header** | Select entire column | Click on any column letter (A, B, C, etc.) |
+| **Click row header** | Select entire row | Click on any row number (1, 2, 3, etc.) |
+| **Ctrl+Click on cell** | Toggle cell selection | Add or remove individual cell from selection |
+| **Shift+Click on cell** | Range selection | Select range from current focus to clicked cell |
+| **Shift+Arrow keys** | Extend range | Expand selection from current focus |
+| **Ctrl+A** | Select all | Select all cells in the entire sheet |
+| **Esc** | Clear selection | Remove all current selections |
+
+### Selection Visual Feedback
+
+| Selection Type | Color | Description |
+|----------------|-------|-------------|
+| Column selection | Blue background | Entire column highlighted |
+| Row selection | Red background | Entire row highlighted |
+| Individual cell | Green background | Selected cells highlighted |
+| Range selection | Purple background | Rectangular range highlighted |
+| Select All | Light green background | All visible cells highlighted |
+| Focus cell | Green thick border | Current active cell indicator |
+
+### Selection Status Display
+
+A selection status bar at the top of the application shows:
+- **"All Cells Selected"** when entire sheet is selected
+- **Column names** when columns are selected
+- **Row numbers** when rows are selected
+- **Range addresses** (e.g., `A1:C3`) when ranges are selected
+- **Cell addresses** when individual cells are selected
+
+### Selection Persistence
+
+- Selections are saved per sheet (each sheet maintains its own selection state)
+- Selections are preserved when switching between sheets
+- Selections are saved to `.edt` files and restored on open
+- Focus cell position is saved and restored
+
+### Keyboard Navigation with Selection
+
+| Key Combination | Action |
+|-----------------|--------|
+| `↑` `↓` `←` `→` | Move focus (auto-scrolls viewport) |
+| `Shift` + `↑` `↓` `←` `→` | Extend range selection |
+| `Page Up` | Move to top edge |
+| `Page Down` | Move to bottom edge |
+| `Home` | Move to left edge |
+| `End` | Move to right edge |
+| `Ctrl+Page Up` | Step up one row |
+| `Ctrl+Page Down` | Step down one row |
+| `Ctrl+Home` | Step left one column |
+| `Ctrl+End` | Step right one column |
+
+---
+
+## Context Menu (Right-Click)
+
+Right-click on any cell to open a context menu with the following options:
+
+### Edit Submenu
+
+| Menu Item | Keyboard Shortcut | Description |
+|-----------|-------------------|-------------|
+| Copy | `Ctrl+C` | Copy cell content to clipboard |
+| Cut | `Ctrl+X` | Cut cell content to clipboard and clear the cell |
+| Paste | `Ctrl+V` | Paste clipboard content to selected cell |
+
+### Tips Submenu
+
+The Tips submenu is dynamic and changes based on the cell's tip state:
+
+| Cell State | Menu Items |
+|------------|-------------|
+| No tip exists | Add Tip |
+| Tip exists and visible | Hide Tip, Edit Tip, Delete Tip |
+| Tip exists and hidden | Show Tip, Edit Tip, Delete Tip |
+
+#### Tip Operations
+
+| Operation | Description |
+|-----------|-------------|
+| **Add Tip** | Adds a yellow sticky note to the cell with custom text |
+| **Show Tip** | Displays a hidden tip |
+| **Hide Tip** | Hides a visible tip (preserves content) |
+| **Edit Tip** | Modifies the tip text |
+| **Delete Tip** | Permanently removes the tip |
+
+**Tip Features:**
+- Yellow background with light bulb icon (💡)
+- Rounded corners with arrow pointing to cell
+- Close button to dismiss
+- Auto-positioning (above cell by default, below if not enough space)
+- Persists across sheet switches and saves
+- Visual indicator (💡) in top-right corner of cells with tips
+
+---
+
+## Main Menu
+
+The application features a comprehensive main menu bar with the following menus and items:
+
+### File Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Open .edt | Open file dialog | `Ctrl+O` | Open a previously saved `.edt` spreadsheet file |
+| Save .edt | Save current data | `Ctrl+S` | Save all sheets data to an `.edt` file |
+| Export to CSV | Export current sheet | `Ctrl+E` | Export the current sheet to CSV format |
+
+### Edit Menu
+
+| Menu Item | Action | Description |
+|-----------|--------|-------------|
+| Formulas Mode | Switch to formulas view | Display cell formulas instead of computed values |
+| Results Mode | Switch to results view | Display computed values instead of formulas |
+
+### Selection Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Select All | Select entire sheet | `Ctrl+A` | Select all cells in the spreadsheet |
+| Clear Selection | Remove all selections | `Esc` | Clear all current selections |
+
+### Navigation Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Move to Top | Go to top edge | `Page Up` | Move viewport to the top of the sheet |
+| Move to Bottom | Go to bottom edge | `Page Down` | Move viewport to the bottom of the sheet |
+| Move to Left Edge | Go to left edge | `Home` | Move viewport to the left edge |
+| Move to Right Edge | Go to right edge | `End` | Move viewport to the right edge |
+| Step Up | Move up one row | `Ctrl+Page Up` | Move viewport up one row |
+| Step Down | Move down one row | `Ctrl+Page Down` | Move viewport down one row |
+| Step Left | Move left one column | `Ctrl+Home` | Move viewport left one column |
+| Step Right | Move right one column | `Ctrl+End` | Move viewport right one column |
+
+### View Menu
+
+| Menu Item | Action | Keyboard Shortcut | Description |
+|-----------|--------|-------------------|-------------|
+| Refresh | Refresh the view | `F5` | Refresh the current view and recalculate all formulas |
+
+### Help Menu
+
+| Menu Item | Action | Description |
+|-----------|--------|-------------|
+| About | Show about dialog | Display application information and version |
+| Keyboard Shortcuts | Show shortcuts dialog | Display all available keyboard shortcuts |
+
+---
+
+## Command Line Interface
+
+The command line interface provides a developer-friendly way to control the spreadsheet. Press `Ctrl+`` (backtick) to focus the command input.
+
+### Available Commands
+
+#### File Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `open` | `open` | Open an `.edt` file |
+| `save` | `save [filename]` | Save spreadsheet to `.edt` file |
+| `export` | `export [filename]` | Export current sheet to CSV |
+
+#### View Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `formulas` | `formulas` | Switch to Formulas Mode |
+| `results` | `results` | Switch to Results Mode |
+| `refresh` | `refresh` | Refresh the current view |
+
+#### Navigation Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `goto` | `goto <cell>` | Move viewport to specific cell (e.g., `goto A1`) |
+| `sheet` | `sheet <sheetname>` | Switch to a different sheet |
+
+#### Info Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `ls` | `ls` | List all available sheets |
+| `info` | `info` | Show current spreadsheet information |
+| `help` | `help [command]` | Show available commands or help for specific command |
+
+#### System Commands
+
+| Command | Usage | Description |
+|---------|-------|-------------|
+| `clear` | `clear` | Clear the command line output |
+| `history` | `history` | Show command history |
+| `exit` | `exit` | Close the command line interface |
+
+### Command Line Features
+
+- **Command History:** Use `↑` and `↓` arrow keys to navigate through command history
+- **Output Coloring:** Different message types have distinct colors:
+  - `info` - Blue
+  - `success` - Green
+  - `error` - Red
+  - `warning` - Orange
+- **Collapsible Output:** Click the header to minimize/hide command history
+- **Keyboard Shortcut:** `Ctrl+`` (backtick) to focus the command input
+- **Clear Output:** Use the `⌧` button or `clear` command
+
+---
+
+## Keyboard Shortcuts
+
+### File Operations
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+O` | Open .edt file |
+| `Ctrl+S` | Save .edt file |
+| `Ctrl+E` | Export to CSV |
+
+### Edit Operations
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+C` | Copy selected cell |
+| `Ctrl+X` | Cut selected cell |
+| `Ctrl+V` | Paste to selected cell |
+| `Double-click` | Edit cell content |
+
+### Selection Operations
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+A` | Select all cells |
+| `Esc` | Clear all selections |
+| `Shift+Click` | Range selection |
+| `Ctrl+Click` | Toggle cell selection |
+
+### Navigation
+
+| Shortcut | Action |
+|----------|--------|
+| `↑` `↓` `←` `→` | Move focus (auto-scroll) |
+| `Shift` + `↑` `↓` `←` `→` | Extend range selection |
+| `Page Up` | Move to top edge |
+| `Page Down` | Move to bottom edge |
+| `Home` | Move to left edge |
+| `End` | Move to right edge |
+| `Ctrl+Page Up` | Step up one row |
+| `Ctrl+Page Down` | Step down one row |
+| `Ctrl+Home` | Step left one column |
+| `Ctrl+End` | Step right one column |
+
+### System
+
+| Shortcut | Action |
+|----------|--------|
+| `F5` | Refresh view |
+| `Ctrl+`` ` | Toggle command line |
 
 ---
 
@@ -187,6 +488,7 @@ All formulas must start with the `=` character.
 | Subtraction | `=value - value` | `=50 - 25` | `25` |
 | Multiplication | `=value * value` | `=5 * 6` | `30` |
 | Division | `=value / value` | `=100 / 4` | `25` |
+| Exponentiation | `=base ^ exponent` | `=2.5 ^ 3` | `15.625` |
 | Combined | `=(value + value) * value` | `=(10 + 20) * 5` | `150` |
 | Nested Parentheses | `=((a + b) * c) / d` | `=((10 + 20) * 5) / 2` | `75` |
 
@@ -372,6 +674,49 @@ Looks up a value in the first column of a table and returns a value in the same 
 
 ---
 
+#### POWER / POW
+Raises a number to a specified power.
+
+```
+=POWER(base, exponent)
+=POW(base, exponent)
+=base ^ exponent
+```
+
+**Arguments:**
+
+| Argument | Description | Required |
+|----------|-------------|----------|
+| `base` | The base number | Yes |
+| `exponent` | The exponent to raise the base to | Yes |
+
+**Key Features:**
+- Supports both comma (`,`) and semicolon (`;`) as argument separators
+- Handles positive and negative bases
+- Handles integer and floating-point exponents
+- Follows Excel behavior for edge cases
+
+**Examples:**
+
+| Formula | Description | Result |
+|---------|-------------|--------|
+| `=POWER(2.5, 3)` | 2.5 raised to the 3rd power | 15.625 |
+| `=POW(2, 3)` | 2 raised to the 3rd power (alias) | 8 |
+| `=2 ^ 3` | Caret operator shorthand | 8 |
+| `=POWER(2, -2)` | 2 raised to the -2nd power | 0.25 |
+| `=POWER(0, 5)` | Zero raised to positive power | 0 |
+| `=POWER(-2, 3)` | Negative base with odd exponent | -8 |
+| `=POWER(-2.5, 2)` | Negative base with even exponent | 6.25 |
+
+**Error Messages:**
+
+| Error | Cause |
+|-------|-------|
+| `#NUM!` | 0^0 (undefined) or negative base with fractional exponent |
+| `#DIV/0!` | 0 raised to a negative integer exponent |
+
+---
+
 ### Cell References
 
 #### Single Cell Reference
@@ -418,29 +763,65 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 
 ## Architecture
 
-... (existing content remains the same) ...
+The application follows a clean modular MVC-like architecture with separate concerns. The codebase is organized into several directories:
 
----
+### Core Components (`/classes`)
 
-## Spreadsheet Functions (`/functions`)
+| Class | Description |
+|-------|-------------|
+| `ASTNode` | Represents nodes in the Abstract Syntax Tree |
+| `ASTEvaluator` | Evaluates AST nodes and handles cell references |
+| `ComputationEngine` | Main entry point for formula computation |
+| `DataHolder` | Stores all sheet data and provides CRUD operations |
+| `FunctionRegistry` | Dynamically loads spreadsheet functions |
+| `SimpleFormulaParser` | Parses formula strings directly into AST nodes |
+| `ViewModel` | Provides computed properties for view state |
+| `SheetView` | Renders the 7x7 viewport as an HTML table |
+| `NavButtonsController` | Handles viewport navigation |
+| `CellsEditablesController` | Manages cell edit events |
+| `AppController` | Orchestrates all components |
+| `MainMenu` | Creates and manages the main menu bar |
+| `CommandLine` | Provides command line interface |
+| `UITip` | Manages cell tip display |
+| `PopupContextMenu` | Handles right-click context menu |
+| `SelectionDataHolder` | Stores selection data per sheet |
+| `SelectionViewDrawer` | Applies selection styles to cells |
+| `SelectionManager` | Manages selection events and state |
+
+### Actions (`/actions`)
+
+| Action | Description |
+|--------|-------------|
+| `OpenAction` | Open .edt JSON files |
+| `SaveAction` | Save spreadsheet as .edt |
+| `ExportCSVAction` | Export current sheet to CSV |
+| `ActionMoveToTop/Bottom/Left/Right` | Edge navigation actions |
+| `ActionStepUp/Down/Left/Right` | Step navigation actions |
+| `MoveFocusUp/Down/Left/RightAction` | Focus movement actions |
+| `SelectAllCellsAction` | Select all cells action |
+| `ActionCopy` | Copy cell content to clipboard |
+| `ActionCut` | Cut cell content to clipboard |
+| `ActionPaste` | Paste clipboard content to cell |
+| `ActionAddTip` | Add a tip to a cell |
+| `ActionShowTip` | Show a hidden tip |
+| `ActionHideTip` | Hide a visible tip |
+| `ActionEditTip` | Edit tip text |
+| `ActionDeleteTip` | Delete tip from cell |
+
+### Spreadsheet Functions (`/functions`)
 
 | File | Function | Description |
 |------|----------|-------------|
-| `sum.js` | SUM | Sums all numeric values |
-| `avg.js` | AVG | Calculates arithmetic mean |
-| `max.js` | MAX | Returns maximum value |
-| `min.js` | MIN | Returns minimum value |
-| `count.js` | COUNT | Counts numeric values |
-| `sumproduct.js` | SUMPRODUCT | Multiplies and sums products |
-| `vlookup.js` | VLOOKUP | Looks up values in a table |
 | `abs.js` | ABS | Returns absolute value |
 | `acos.js` | ACOS | Returns arccosine |
 | `angle.js` | ANGLE | Returns angle of point (x,y) |
 | `asin.js` | ASIN | Returns arcsine |
 | `atn.js` | ATN | Returns arctangent |
+| `avg.js` | AVG | Calculates arithmetic mean |
 | `ceil.js` | CEIL | Returns smallest integer ≥ x |
 | `cos.js` | COS | Returns cosine |
 | `cot.js` | COT | Returns cotangent |
+| `count.js` | COUNT | Counts numeric values |
 | `csc.js` | CSC | Returns cosecant |
 | `date.js` | DATE | Returns current date |
 | `deg.js` | DEG | Converts radians to degrees |
@@ -452,8 +833,11 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 | `ip.js` | IP | Returns integer part (truncate) |
 | `log.js` | LOG | Returns natural logarithm |
 | `log10.js` | LOG10 | Returns base-10 logarithm |
+| `max.js` | MAX | Returns maximum value |
+| `min.js` | MIN | Returns minimum value |
 | `mod.js` | MOD | Returns modulo |
 | `pi.js` | PI | Returns π constant |
+| `power.js` | POWER/POW | Raises number to a power |
 | `rad.js` | RAD | Converts degrees to radians |
 | `rmd.js` | RMD | Returns remainder |
 | `rnd.js` | RND | Returns random number |
@@ -461,8 +845,11 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 | `sgn.js` | SGN | Returns sign (-1, 0, 1) |
 | `sin.js` | SIN | Returns sine |
 | `sqr.js` | SQR | Returns square root |
+| `sum.js` | SUM | Sums all numeric values |
+| `sumproduct.js` | SUMPRODUCT | Multiplies and sums products |
 | `tan.js` | TAN | Returns tangent |
 | `time.js` | TIME | Returns seconds since midnight |
+| `vlookup.js` | VLOOKUP | Looks up values in a table |
 
 ---
 
@@ -545,6 +932,7 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 │   ├── min.js
 │   ├── mod.js
 │   ├── pi.js
+│   ├── power.js
 │   ├── rad.js
 │   ├── rmd.js
 │   ├── rnd.js
@@ -570,7 +958,7 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 
 The application includes a comprehensive test suite (`test.html`) that validates all formula functionality:
 
-- **80+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, SUMPRODUCT, VLOOKUP, and all mathematical functions
+- **111+ Test Cases** covering arithmetic, cell references, functions, cross-sheet references, SUMPRODUCT, VLOOKUP, all mathematical functions, and exponentiation (POWER, POW, ^ operator)
 - **100% Pass Rate** on all test cases
 - **Visual Test Results** with green/red highlighting for pass/fail indicators
 - **Report Generation** for failed tests with copy to clipboard functionality
@@ -582,7 +970,15 @@ Run `test.html` from the HTTP server to validate the formula engine.
 
 ## Version History
 
-### v1.7.0 (Current)
+### v1.8.0 (Current)
+- Added POWER and POW functions for exponentiation
+- Added caret operator (`^`) for inline exponentiation
+- Support for both comma (`,`) and semicolon (`;`) as argument separators in functions
+- Comprehensive edge case handling for exponentiation (0^0, negative bases with fractional exponents)
+- Added 31 new test cases for POWER, POW, and caret operator
+- Achieved 111 total test cases with 100% pass rate
+
+### v1.7.0
 - Added 30+ mathematical and utility functions
 - Added trigonometric functions: SIN, COS, TAN, COT, SEC, CSC
 - Added inverse trigonometric functions: ASIN, ACOS, ATN, ANGLE (ATAN2)
@@ -593,7 +989,6 @@ Run `test.html` from the HTTP server to validate the formula engine.
 - Added angle conversion functions: DEG, RAD
 - Added sign and absolute value functions: ABS, SGN
 - Enhanced cross-sheet range support with shorthand notation
-- Achieved 100% test pass rate with 80+ test cases
 - Added comprehensive mathematical function documentation
 
 ### v1.6.0

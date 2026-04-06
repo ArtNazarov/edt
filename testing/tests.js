@@ -835,6 +835,266 @@ function initializeTests() {
             formula: '=RAD(45)',
             expected: Math.PI / 4,
             tolerance: 0.0001
+        },
+        // ==================== POWER Function Tests ====================
+        // Positive base tests
+        {
+            name: 'POWER - positive base with integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST81',
+            formula: '=POWER(2.5, 3)',
+            expected: 15.625,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POWER - positive base exponent zero',
+            sheetName: 'first',
+            cellAddress: 'TEST82',
+            formula: '=POWER(2, 0)',
+            expected: 1,
+            tolerance: 0
+        },
+        {
+            name: 'POWER - positive base with negative integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST83',
+            formula: '=POWER(2.5, -2)',
+            expected: 0.16,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POWER - positive base with negative float exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST84',
+            formula: '=POWER(2, -1.5)',
+            expected: 0.353553,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POWER - fractional base with integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST85',
+            formula: '=POWER(0.5, 3)',
+            expected: 0.125,
+            tolerance: 0.0001
+        },
+
+        // Negative base with integer exponent tests
+        {
+            name: 'POWER - negative base with odd integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST86',
+            formula: '=POWER(-2, 3)',
+            expected: -8,
+            tolerance: 0
+        },
+        {
+            name: 'POWER - negative base with even integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST87',
+            formula: '=POWER(-2.5, 2)',
+            expected: 6.25,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POWER - negative base exponent zero',
+            sheetName: 'first',
+            cellAddress: 'TEST88',
+            formula: '=POWER(-3, 0)',
+            expected: 1,
+            tolerance: 0
+        },
+        {
+            name: 'POWER - negative base with negative integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST89',
+            formula: '=POWER(-2, -2)',
+            expected: 0.25,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POWER - negative base with negative exponent odd',
+            sheetName: 'first',
+            cellAddress: 'TEST90',
+            formula: '=POWER(-2.5, -1)',
+            expected: -0.4,
+            tolerance: 0.0001
+        },
+
+        // Zero base tests
+        {
+            name: 'POWER - zero base exponent zero',
+            sheetName: 'first',
+            cellAddress: 'TEST91',
+            formula: '=POWER(0, 0)',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+        {
+            name: 'POWER - zero base positive integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST92',
+            formula: '=POWER(0, 2)',
+            expected: 0,
+            tolerance: 0
+        },
+        {
+            name: 'POWER - zero base positive float exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST93',
+            formula: '=POWER(0, 1.5)',
+            expected: 0,
+            tolerance: 0
+        },
+        {
+            name: 'POWER - zero base negative integer exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST94',
+            formula: '=POWER(0, -1)',
+            expected: '#DIV/0!',
+            tolerance: 0
+        },
+        {
+            name: 'POWER - zero base negative float exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST95',
+            formula: '=POWER(0, -0.5)',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+
+        // Negative base with fractional exponent (should return #NUM!)
+        {
+            name: 'POWER - negative base with fractional exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST96',
+            formula: '=POWER(-4, 0.5)',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+        {
+            name: 'POWER - negative base with fractional exponent approx',
+            sheetName: 'first',
+            cellAddress: 'TEST97',
+            formula: '=POWER(-8.1, 0.333333)',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+        {
+            name: 'POWER - negative base with negative fractional exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST98',
+            formula: '=POWER(-1, -0.5)',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+
+        // POW alias tests
+        {
+            name: 'POW alias - positive base',
+            sheetName: 'first',
+            cellAddress: 'TEST99',
+            formula: '=POW(2.5, 3)',
+            expected: 15.625,
+            tolerance: 0.0001
+        },
+        {
+            name: 'POW alias - semicolon separator',
+            sheetName: 'first',
+            cellAddress: 'TEST100',
+            formula: '=POW(2;3)',
+            expected: 8,
+            tolerance: 0
+        },
+        {
+            name: 'POWER alias - semicolon separator',
+            sheetName: 'first',
+            cellAddress: 'TEST101',
+            formula: '=POWER(2;3)',
+            expected: 8,
+            tolerance: 0
+        },
+
+        // Caret operator (^) tests
+        {
+            name: 'Caret operator - positive base',
+            sheetName: 'first',
+            cellAddress: 'TEST102',
+            formula: '=2.5^3',
+            expected: 15.625,
+            tolerance: 0.0001
+        },
+        {
+            name: 'Caret operator - exponent zero',
+            sheetName: 'first',
+            cellAddress: 'TEST103',
+            formula: '=2^0',
+            expected: 1,
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - negative base odd exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST104',
+            formula: '=(-2)^3',
+            expected: -8,
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - negative base even exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST105',
+            formula: '=(-2.5)^2',
+            expected: 6.25,
+            tolerance: 0.0001
+        },
+        {
+            name: 'Caret operator - zero base positive',
+            sheetName: 'first',
+            cellAddress: 'TEST106',
+            formula: '=0^2',
+            expected: 0,
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - zero base zero',
+            sheetName: 'first',
+            cellAddress: 'TEST107',
+            formula: '=0^0',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - negative base fractional exponent',
+            sheetName: 'first',
+            cellAddress: 'TEST108',
+            formula: '=(-4)^0.5',
+            expected: '#NUM!',
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - expression with power',
+            sheetName: 'first',
+            cellAddress: 'TEST109',
+            formula: '=2^3+5',
+            expected: 13,
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - power precedence',
+            sheetName: 'first',
+            cellAddress: 'TEST110',
+            formula: '=2*3^2',
+            expected: 18,
+            tolerance: 0
+        },
+        {
+            name: 'Caret operator - right associativity',
+            sheetName: 'first',
+            cellAddress: 'TEST111',
+            formula: '=2^3^2',
+            expected: 512,
+            tolerance: 0
         }
     ];
 }

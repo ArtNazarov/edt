@@ -48,8 +48,8 @@ export default class SimpleFormulaParser {
         return node;
     }
 
-    parseMultiplicative() {
-        let node = this.parsePrimary();
+     parseMultiplicative() {
+        let node = this.parsePower();  // Changed from parsePrimary
 
         while (this.pos < this.len) {
             this.skipWhitespace();
@@ -58,12 +58,32 @@ export default class SimpleFormulaParser {
             const ch = this.formula[this.pos];
             if (ch === '*') {
                 this.pos++;
-                const right = this.parsePrimary();
+                const right = this.parsePower();  // Changed from parsePrimary
                 node = new ASTNode('BINARY_OP', { operator: '*', left: node, right: right });
             } else if (ch === '/') {
                 this.pos++;
-                const right = this.parsePrimary();
+                const right = this.parsePower();  // Changed from parsePrimary
                 node = new ASTNode('BINARY_OP', { operator: '/', left: node, right: right });
+            } else {
+                break;
+            }
+        }
+
+        return node;
+    }
+
+    parsePower() {
+        let node = this.parsePrimary();
+
+        while (this.pos < this.len) {
+            this.skipWhitespace();
+            if (this.pos >= this.len) break;
+
+            const ch = this.formula[this.pos];
+            if (ch === '^') {
+                this.pos++;
+                const right = this.parsePower();
+                node = new ASTNode('BINARY_OP', { operator: '^', left: node, right: right });
             } else {
                 break;
             }
@@ -280,44 +300,45 @@ export default class SimpleFormulaParser {
         return new ASTNode('STRING', { value: str });
     }
 
-    parseFunctionCall(functionName) {
-        this.pos++; // Skip '('
-        const args = [];
 
-        this.skipWhitespace();
-
-        // Empty arguments
-        if (this.pos < this.len && this.formula[this.pos] === ')') {
-            this.pos++;
-            return new ASTNode('FUNCTION_CALL', { name: functionName.toUpperCase(), arguments: args });
-        }
-
-        // Parse arguments
-        while (this.pos < this.len) {
-            const arg = this.parseExpression();
-            args.push(arg);
+        parseFunctionCall(functionName) {
+            this.pos++; // Skip '('
+            const args = [];
 
             this.skipWhitespace();
 
-            if (this.pos >= this.len) {
-                throw new Error('Unexpected end of function call');
+            // Empty arguments
+            if (this.pos < this.len && this.formula[this.pos] === ')') {
+                this.pos++;
+                return new ASTNode('FUNCTION_CALL', { name: functionName.toUpperCase(), arguments: args });
             }
 
-            const ch = this.formula[this.pos];
-            if (ch === ')') {
-                this.pos++;
-                break;
-            } else if (ch === ',') {
-                this.pos++;
+            // Parse arguments
+            while (this.pos < this.len) {
+                const arg = this.parseExpression();
+                args.push(arg);
+
                 this.skipWhitespace();
-                continue;
-            } else {
-                throw new Error(`Expected ',' or ')' in function call, got ${ch}`);
-            }
-        }
 
-        return new ASTNode('FUNCTION_CALL', { name: functionName.toUpperCase(), arguments: args });
-    }
+                if (this.pos >= this.len) {
+                    throw new Error('Unexpected end of function call');
+                }
+
+                const ch = this.formula[this.pos];
+                if (ch === ')') {
+                    this.pos++;
+                    break;
+                } else if (ch === ',' || ch === ';') {  // Support both comma and semicolon
+                    this.pos++;
+                    this.skipWhitespace();
+                    continue;
+                } else {
+                    throw new Error(`Expected ',' or ')' in function call, got ${ch}`);
+                }
+            }
+
+            return new ASTNode('FUNCTION_CALL', { name: functionName.toUpperCase(), arguments: args });
+        }
 
     skipWhitespace() {
         while (this.pos < this.len && /\s/.test(this.formula[this.pos])) {

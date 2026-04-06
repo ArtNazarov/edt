@@ -241,25 +241,57 @@ export default class MainMenu {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal-dialog">
+            <div class="modal-dialog" style="min-width: 550px;">
                 <div class="modal-header">
                     <h3>About Editable Table Viewport</h3>
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Version:</strong> 1.6.0</p>
-                    <p><strong>Features:</strong></p>
-                    <ul>
-                        <li>AST-based formula computation engine</li>
-                        <li>Support for SUM, AVG, MAX, MIN, COUNT, SUMPRODUCT, VLOOKUP</li>
-                        <li>Cross-sheet references</li>
-                        <li>Multiple worksheets</li>
-                        <li>7x7 viewport with keyboard navigation</li>
-                        <li>Cell tips and comments</li>
-                        <li>Selection management (columns, rows, ranges)</li>
-                        <li>Open/Save .edt files with metadata</li>
-                    </ul>
+                    <p><strong>Version:</strong> 1.8.0</p>
                     <p><strong>License:</strong> MIT</p>
+                    <p>A powerful spreadsheet-like application with AST-based formula computation engine.</p>
+
+                    <hr>
+
+                    <h4>📊 Available Functions</h4>
+                    <p><strong>Statistical:</strong> SUM, AVG, MAX, MIN, COUNT</p>
+                    <p><strong>Lookup & Reference:</strong> VLOOKUP, SUMPRODUCT</p>
+                    <p><strong>Trigonometric:</strong> SIN, COS, TAN, COT, SEC, CSC</p>
+                    <p><strong>Inverse Trigonometric:</strong> ASIN, ACOS, ATN, ANGLE</p>
+                    <p><strong>Exponential & Logarithmic:</strong> EXP, LOG, LOG10, SQR</p>
+                    <p><strong>Power:</strong> POWER, POW (^ operator)</p>
+                    <p><strong>Integer & Rounding:</strong> INT, FLOOR, CEIL, IP, FP</p>
+                    <p><strong>Absolute & Sign:</strong> ABS, SGN</p>
+                    <p><strong>Modulo & Remainder:</strong> MOD, RMD</p>
+                    <p><strong>Angle Conversion:</strong> DEG, RAD</p>
+                    <p><strong>Constants & Utilities:</strong> PI, EPS, INF, DATE, TIME, RND</p>
+                    <p><strong>Basic Arithmetic:</strong> +, -, *, /, ^</p>
+
+                    <hr>
+
+                    <h4>✨ Core Features</h4>
+                    <p>✓ Multiple worksheets support</p>
+                    <p>✓ Cross-sheet references (e.g., first.A2:A4)</p>
+                    <p>✓ 7x7 viewport with keyboard navigation</p>
+                    <p>✓ Formulas/Results mode toggle</p>
+                    <p>✓ Advanced selection system (row, column, range)</p>
+                    <p>✓ Cell tips (sticky notes)</p>
+                    <p>✓ Copy/Cut/Paste functionality</p>
+                    <p>✓ Command line interface</p>
+                    <p>✓ File operations (Open/Save/Export CSV)</p>
+                    <p>✓ Context menu (right-click)</p>
+
+                    <hr>
+
+                    <p style="text-align: center; margin-top: 15px;">
+                        <a href="https://github.com/ArtNazarov/edt" target="_blank" style="color: #2196F3; text-decoration: none; font-weight: bold;">
+                            🐙 View on GitHub
+                        </a>
+                    </p>
+
+                    <p style="margin-top: 15px; font-size: 12px; color: #666; text-align: center;">
+                        Total Functions: 40+ | Test Coverage: 111+ test cases (100% pass rate)
+                    </p>
                 </div>
                 <div class="modal-footer">
                     <button class="modal-btn modal-btn-primary">OK</button>

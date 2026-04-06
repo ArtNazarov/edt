@@ -39,6 +39,8 @@ export default class FunctionRegistry {
             'SIN': '../functions/sin.js',
             'SQR': '../functions/sqr.js',
             'TAN': '../functions/tan.js',
+            'POWER': '../functions/power.js',
+            'POW': '../functions/power.js',  // Alias for POWER
 
             // Constant/utility functions
             'DATE': '../functions/date.js',
