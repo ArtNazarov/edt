@@ -1,21 +1,29 @@
-// COUNT function implementation
-// Counts the number of numeric values in a range or list of arguments
-export default async function count(args, context) {
+// COUNT function - counts numeric values
+export default function count(args, context, rawArgs) {
     let count = 0;
 
-    for (const arg of args) {
-        if (arg.type === 'range') {
-            const rangeValues = await context.evaluateRange(arg.start, arg.end);
-            // rangeValues already contains only numeric values from evaluateRange
-            count += rangeValues.length;
-        } else if (arg.type === 'expression') {
-            const val = await context.evaluate(arg.value);
-            if (typeof val === 'number' && !isNaN(val)) {
+    function processValue(val) {
+        if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+            count++;
+        } else if (typeof val === 'string') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && isFinite(num) && val.trim() !== '') {
                 count++;
             }
         }
     }
 
-    // Return the count (no formatting needed as it's always an integer)
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (Array.isArray(arg)) {
+            for (const val of arg) {
+                processValue(val);
+            }
+        } else {
+            processValue(arg);
+        }
+    }
+
     return count;
 }

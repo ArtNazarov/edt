@@ -40,6 +40,14 @@ button.passed {
     background: #4CAF50;
 }
 
+button.copy-btn {
+    background: #2196F3;
+}
+
+button.copy-btn:hover {
+    background: #1976D2;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -62,14 +70,28 @@ tr:nth-child(even) {
     background: #f9f9f9;
 }
 
-.pass {
-    background: #d4edda !important;
+/* Row highlighting for passed tests - green background */
+tr.passed {
+    background-color: #d4edda !important;
+}
+
+tr.passed td {
     color: #155724;
 }
 
-.fail {
-    background: #f8d7da !important;
+/* Row highlighting for failed tests - red background */
+tr.failed {
+    background-color: #f8d7da !important;
+}
+
+tr.failed td {
     color: #721c24;
+}
+
+/* Override zebra striping for colored rows */
+tr.passed:nth-child(even),
+tr.failed:nth-child(even) {
+    background-color: inherit;
 }
 
 .test-summary {
@@ -80,27 +102,31 @@ tr:nth-child(even) {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.summary-pass {
+.passed-count {
     color: #155724;
     font-weight: bold;
 }
 
-.summary-fail {
+.failed-count {
     color: #721c24;
     font-weight: bold;
-}
-
-.copy-btn {
-    background: #2196F3;
-    margin: 5px;
-}
-
-.copy-btn:hover {
-    background: #1976D2;
 }
 
 .test-description {
     font-size: 0.9em;
     color: #666;
     margin-top: 5px;
+}
+
+/* Result cell styling */
+td:last-child {
+    font-weight: bold;
+}
+
+tr.passed td:last-child {
+    color: #155724;
+}
+
+tr.failed td:last-child {
+    color: #721c24;
 }

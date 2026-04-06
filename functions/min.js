@@ -1,28 +1,29 @@
-// MIN function implementation
-// Returns the minimum (smallest) numeric value in a range or list of arguments
-export default async function min(args, context) {
-    const values = [];
+// MIN function - returns minimum value
+export default function min(args, context, rawArgs) {
+    let minVal = Infinity;
 
-    for (const arg of args) {
-        if (arg.type === 'range') {
-            const rangeValues = await context.evaluateRange(arg.start, arg.end);
-            values.push(...rangeValues);
-        } else if (arg.type === 'expression') {
-            const val = await context.evaluate(arg.value);
-            if (typeof val === 'number' && !isNaN(val)) {
-                values.push(val);
+    function processValue(val) {
+        if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+            if (val < minVal) minVal = val;
+        } else if (typeof val === 'string') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && isFinite(num)) {
+                if (num < minVal) minVal = num;
             }
         }
     }
 
-    // Handle empty range
-    if (values.length === 0) {
-        return 0;
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (Array.isArray(arg)) {
+            for (const val of arg) {
+                processValue(val);
+            }
+        } else {
+            processValue(arg);
+        }
     }
 
-    // Find minimum value
-    const result = Math.min(...values);
-
-    // Format and return
-    return context.formatNumber(result);
+    return minVal === Infinity ? 0 : minVal;
 }

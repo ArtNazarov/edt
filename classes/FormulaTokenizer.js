@@ -1,12 +1,12 @@
-// Tokenizer for Formula Parsing
+// FormulaTokenizer.js - Fixed to properly handle parentheses
 export default class FormulaTokenizer {
-    static tokenize(expr) {
+    static tokenize(expression) {
         const tokens = [];
         let i = 0;
-        const len = expr.length;
+        const len = expression.length;
 
         while (i < len) {
-            let ch = expr[i];
+            const ch = expression[i];
 
             // Skip whitespace
             if (/\s/.test(ch)) {
@@ -17,37 +17,98 @@ export default class FormulaTokenizer {
             // Numbers (including decimals)
             if (/[0-9]/.test(ch)) {
                 let num = '';
-                let decimalCount = 0;
-                while (i < len && /[0-9.]/.test(expr[i])) {
-                    if (expr[i] === '.') decimalCount++;
-                    if (decimalCount > 1) break;
-                    num += expr[i];
+                let hasDecimal = false;
+                while (i < len && (/[0-9]/.test(expression[i]) || (expression[i] === '.' && !hasDecimal))) {
+                    if (expression[i] === '.') hasDecimal = true;
+                    num += expression[i];
                     i++;
                 }
-                tokens.push({ type: 'number', value: parseFloat(num) });
+                tokens.push({ type: 'NUMBER', value: num });
                 continue;
             }
 
-            // Identifiers (cell references or function names)
-            if (/[A-Za-z]/.test(ch)) {
+            // Strings (quoted)
+            if (ch === '"' || ch === "'") {
+                const quoteChar = ch;
+                i++;
+                let str = '';
+                while (i < len && expression[i] !== quoteChar) {
+                    str += expression[i];
+                    i++;
+                }
+                i++; // Skip closing quote
+                tokens.push({ type: 'STRING', value: str });
+                continue;
+            }
+
+            // Identifiers (function names, cell references, sheet names)
+            if (/[A-Za-z_]/.test(ch)) {
                 let ident = '';
-                while (i < len && /[A-Za-z0-9_.]/.test(expr[i])) {
-                    ident += expr[i];
+                while (i < len && /[A-Za-z0-9_]/.test(expression[i])) {
+                    ident += expression[i];
                     i++;
                 }
-                tokens.push({ type: 'identifier', value: ident });
+                tokens.push({ type: 'IDENTIFIER', value: ident });
                 continue;
             }
 
-            // Operators and parentheses
-            if ('+-*/()=,.:'.includes(ch)) {
-                tokens.push({ type: 'operator', value: ch });
+            // Parentheses and operators
+            if (ch === '(') {
+                tokens.push({ type: 'OPERATOR', value: '(' });
+                i++;
+                continue;
+            }
+
+            if (ch === ')') {
+                tokens.push({ type: 'OPERATOR', value: ')' });
+                i++;
+                continue;
+            }
+
+            if (ch === ',') {
+                tokens.push({ type: 'OPERATOR', value: ',' });
+                i++;
+                continue;
+            }
+
+            if (ch === ':') {
+                tokens.push({ type: 'OPERATOR', value: ':' });
+                i++;
+                continue;
+            }
+
+            if (ch === '.') {
+                tokens.push({ type: 'OPERATOR', value: '.' });
+                i++;
+                continue;
+            }
+
+            if (ch === '+') {
+                tokens.push({ type: 'OPERATOR', value: '+' });
+                i++;
+                continue;
+            }
+
+            if (ch === '-') {
+                tokens.push({ type: 'OPERATOR', value: '-' });
+                i++;
+                continue;
+            }
+
+            if (ch === '*') {
+                tokens.push({ type: 'OPERATOR', value: '*' });
+                i++;
+                continue;
+            }
+
+            if (ch === '/') {
+                tokens.push({ type: 'OPERATOR', value: '/' });
                 i++;
                 continue;
             }
 
             // Unknown character
-            i++;
+            throw new Error(`Unexpected character: ${ch}`);
         }
 
         return tokens;

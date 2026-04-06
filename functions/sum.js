@@ -1,19 +1,34 @@
-// SUM function implementation
-export default async function sum(args, context) {
-    const values = [];
+// SUM function - calculates sum of values
+export default function sum(args, context, rawArgs) {
+    let total = 0;
 
-    for (const arg of args) {
-        if (arg.type === 'range') {
-            const rangeValues = await context.evaluateRange(arg.start, arg.end);
-            values.push(...rangeValues);
-        } else if (arg.type === 'expression') {
-            const val = await context.evaluate(arg.value);
-            if (typeof val === 'number' && !isNaN(val)) {
-                values.push(val);
+    function processValue(val) {
+        if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+            total += val;
+        } else if (typeof val === 'string') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && isFinite(num)) {
+                total += num;
             }
         }
     }
 
-    const result = values.reduce((a, b) => a + b, 0);
-    return context.formatNumber(result);
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (Array.isArray(arg)) {
+            // Handle array from range reference
+            for (const val of arg) {
+                processValue(val);
+            }
+        } else if (arg && typeof arg === 'object' && arg.type === 'RANGE_REF') {
+            // This shouldn't happen as ranges should be evaluated before
+            console.warn('Unprocessed range reference in SUM');
+        } else {
+            // Handle single value (number, string, or evaluated cell reference)
+            processValue(arg);
+        }
+    }
+
+    return total;
 }

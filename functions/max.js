@@ -1,28 +1,29 @@
-// MAX function implementation
-// Returns the maximum (largest) numeric value in a range or list of arguments
-export default async function max(args, context) {
-    const values = [];
+// MAX function - returns maximum value
+export default function max(args, context, rawArgs) {
+    let maxVal = -Infinity;
 
-    for (const arg of args) {
-        if (arg.type === 'range') {
-            const rangeValues = await context.evaluateRange(arg.start, arg.end);
-            values.push(...rangeValues);
-        } else if (arg.type === 'expression') {
-            const val = await context.evaluate(arg.value);
-            if (typeof val === 'number' && !isNaN(val)) {
-                values.push(val);
+    function processValue(val) {
+        if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+            if (val > maxVal) maxVal = val;
+        } else if (typeof val === 'string') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && isFinite(num)) {
+                if (num > maxVal) maxVal = num;
             }
         }
     }
 
-    // Handle empty range
-    if (values.length === 0) {
-        return 0;
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (Array.isArray(arg)) {
+            for (const val of arg) {
+                processValue(val);
+            }
+        } else {
+            processValue(arg);
+        }
     }
 
-    // Find maximum value
-    const result = Math.max(...values);
-
-    // Format and return
-    return context.formatNumber(result);
+    return maxVal === -Infinity ? 0 : maxVal;
 }

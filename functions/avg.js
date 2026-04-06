@@ -1,29 +1,32 @@
-// AVG function implementation
-// Calculates the arithmetic mean (average) of all numeric values in a range or list of arguments
-export default async function avg(args, context) {
-    const values = [];
+// AVG function - calculates average of values
+export default function avg(args, context, rawArgs) {
+    let total = 0;
+    let count = 0;
 
-    for (const arg of args) {
-        if (arg.type === 'range') {
-            const rangeValues = await context.evaluateRange(arg.start, arg.end);
-            values.push(...rangeValues);
-        } else if (arg.type === 'expression') {
-            const val = await context.evaluate(arg.value);
-            if (typeof val === 'number' && !isNaN(val)) {
-                values.push(val);
+    function processValue(val) {
+        if (typeof val === 'number' && !isNaN(val) && isFinite(val)) {
+            total += val;
+            count++;
+        } else if (typeof val === 'string') {
+            const num = parseFloat(val);
+            if (!isNaN(num) && isFinite(num) && val.trim() !== '') {
+                total += num;
+                count++;
             }
         }
     }
 
-    // Handle empty range
-    if (values.length === 0) {
-        return 0;
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+
+        if (Array.isArray(arg)) {
+            for (const val of arg) {
+                processValue(val);
+            }
+        } else {
+            processValue(arg);
+        }
     }
 
-    // Calculate sum and average
-    const sum = values.reduce((a, b) => a + b, 0);
-    const result = sum / values.length;
-
-    // Format and return
-    return context.formatNumber(result);
+    return count === 0 ? 0 : total / count;
 }

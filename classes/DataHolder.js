@@ -30,7 +30,7 @@ export default class DataHolder {
                     {"cell": "C3", "data": "100"},
                     {"cell": "D3", "data": "200"},
                     {"cell": "E3", "data": "=first.C2 + 50"},
-                    {"cell": "F3", "data": "=SUM(first.A2:first.A4)"}
+                    {"cell": "F3", "data": "=SUM(first.A2:A4)"}
                 ]
             },
             "sumproduct": {
@@ -82,22 +82,80 @@ export default class DataHolder {
         return Object.keys(this.sheets);
     }
 
-    updateCell(sheetName, cellId, data) {
+    // Check if a sheet exists
+    hasSheet(sheetName) {
+        return this.sheets.hasOwnProperty(sheetName);
+    }
+
+    // Add a new sheet
+    addSheet(sheetName) {
+        if (!this.sheets[sheetName]) {
+            this.sheets[sheetName] = {
+                start_row: 1,
+                start_col: 1,
+                cells: []
+            };
+            return true;
+        }
+        return false;
+    }
+
+    // Remove a sheet
+    removeSheet(sheetName) {
+        if (this.sheets[sheetName] && sheetName !== 'first') {
+            delete this.sheets[sheetName];
+            if (this.currentSheet === sheetName) {
+                this.currentSheet = 'first';
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // Get all sheets
+    getAllSheets() {
+        return this.sheets;
+    }
+
+    // Get cell value
+    getCellValue(sheetName, cellId) {
         const sheet = this.sheets[sheetName];
+        if (!sheet) return '';
+
+        const cell = sheet.cells.find(item => item.cell === cellId);
+        return cell ? cell.data : '';
+    }
+
+    // Set cell value
+    setCellValue(sheetName, cellId, data) {
+        const sheet = this.sheets[sheetName];
+        if (!sheet) {
+            // Create sheet if it doesn't exist
+            this.addSheet(sheetName);
+            return this.setCellValue(sheetName, cellId, data);
+        }
+
         const existingCell = sheet.cells.find(item => item.cell === cellId);
         if (existingCell) {
-            if (data === '') {
+            if (data === '' || data === null || data === undefined) {
+                // Remove cell if empty
                 sheet.cells = sheet.cells.filter(item => item.cell !== cellId);
             } else {
-                existingCell.data = data;
+                existingCell.data = String(data);
             }
-        } else if (data !== '') {
-            sheet.cells.push({ "cell": cellId, "data": data });
+        } else if (data !== '' && data !== null && data !== undefined) {
+            sheet.cells.push({ "cell": cellId, "data": String(data) });
         }
+    }
+
+    updateCell(sheetName, cellId, data) {
+        this.setCellValue(sheetName, cellId, data);
     }
 
     updateViewport(sheetName, start_row, start_col) {
         const sheet = this.sheets[sheetName];
+        if (!sheet) return;
+
         // Ensure start_row and start_col are within valid ranges
         const MAX_ROW = 999;
         const MAX_COL = 18278;
@@ -110,6 +168,32 @@ export default class DataHolder {
 
         sheet.start_row = validStartRow;
         sheet.start_col = validStartCol;
+    }
+
+    // Get viewport start row
+    getViewportStartRow(sheetName) {
+        const sheet = this.sheets[sheetName];
+        return sheet ? sheet.start_row : 1;
+    }
+
+    // Get viewport start column
+    getViewportStartCol(sheetName) {
+        const sheet = this.sheets[sheetName];
+        return sheet ? sheet.start_col : 1;
+    }
+
+    // Get all cells in a sheet
+    getAllCells(sheetName) {
+        const sheet = this.sheets[sheetName];
+        return sheet ? sheet.cells : [];
+    }
+
+    // Clear all cells in a sheet
+    clearSheet(sheetName) {
+        const sheet = this.sheets[sheetName];
+        if (sheet) {
+            sheet.cells = [];
+        }
     }
 
     // In DataHolder.js, add these helper methods:
@@ -132,4 +216,21 @@ export default class DataHolder {
         return result;
     }
 
+    // Parse cell address to row and column numbers
+    parseCellAddress(cellAddress) {
+        const match = cellAddress.match(/([A-Z]+)(\d+)/);
+        if (!match) {
+            throw new Error(`Invalid cell address: ${cellAddress}`);
+        }
+        const colName = match[1];
+        const rowNum = parseInt(match[2], 10);
+        const colNum = this.colNameToColNumber(colName);
+        return { row: rowNum, col: colNum, colName, rowNum };
+    }
+
+    // Convert row and column numbers to cell address
+    getCellAddress(row, col) {
+        const colName = this.colNumberToColName(col);
+        return `${colName}${row}`;
+    }
 }

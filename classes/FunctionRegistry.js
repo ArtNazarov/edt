@@ -4,13 +4,49 @@ export default class FunctionRegistry {
         this.functions = new Map();
         this.loadingPromises = new Map();
         this.functionPathMap = {
+            // Existing functions
             'SUM': '../functions/sum.js',
             'AVG': '../functions/avg.js',
             'MAX': '../functions/max.js',
             'MIN': '../functions/min.js',
             'COUNT': '../functions/count.js',
             'SUMPRODUCT': '../functions/sumproduct.js',
-            'VLOOKUP': '../functions/vlookup.js'
+            'VLOOKUP': '../functions/vlookup.js',
+
+            // Mathematical functions
+            'ABS': '../functions/abs.js',
+            'ACOS': '../functions/acos.js',
+            'ANGLE': '../functions/angle.js',
+            'ASIN': '../functions/asin.js',
+            'ATN': '../functions/atn.js',
+            'CEIL': '../functions/ceil.js',
+            'COS': '../functions/cos.js',
+            'COT': '../functions/cot.js',
+            'CSC': '../functions/csc.js',
+            'DEG': '../functions/deg.js',
+            'EXP': '../functions/exp.js',
+            'FLOOR': '../functions/floor.js',
+            'FP': '../functions/fp.js',
+            'INT': '../functions/floor.js',
+            'IP': '../functions/ip.js',
+            'LOG': '../functions/log.js',
+            'LOG10': '../functions/log10.js',
+            'MOD': '../functions/mod.js',
+            'RAD': '../functions/rad.js',
+            'RMD': '../functions/rmd.js',
+            'SEC': '../functions/sec.js',
+            'SGN': '../functions/sgn.js',
+            'SIN': '../functions/sin.js',
+            'SQR': '../functions/sqr.js',
+            'TAN': '../functions/tan.js',
+
+            // Constant/utility functions
+            'DATE': '../functions/date.js',
+            'EPS': '../functions/eps.js',
+            'INF': '../functions/inf.js',
+            'PI': '../functions/pi.js',
+            'RND': '../functions/rnd.js',
+            'TIME': '../functions/time.js'
         };
     }
 
@@ -39,6 +75,7 @@ export default class FunctionRegistry {
                 const fn = module.default;
                 this.functions.set(upperName, fn);
                 this.loadingPromises.delete(upperName);
+                console.log(`Function loaded: ${upperName}`);
                 return fn;
             })
             .catch(error => {
@@ -57,5 +94,14 @@ export default class FunctionRegistry {
 
     getLoadedFunctions() {
         return Array.from(this.functions.keys());
+    }
+
+    isFunctionRegistered(functionName) {
+        const upperName = functionName.toUpperCase();
+        return this.functionPathMap.hasOwnProperty(upperName);
+    }
+
+    getRegisteredFunctions() {
+        return Object.keys(this.functionPathMap);
     }
 }

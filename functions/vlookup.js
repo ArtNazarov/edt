@@ -1,168 +1,75 @@
-// VLOOKUP function implementation
-// Looks up a value in the first column of a table and returns a value in the same row from a specified column
-export default async function vlookup(args, context) {
-    // VLOOKUP requires at least 3 arguments: lookup_value, table_array, col_index_num
-    // Optional 4th argument: range_lookup (TRUE/FALSE, default TRUE)
+// VLOOKUP function
+export default function vlookup(args, context, rawArgs) {
     if (args.length < 3) {
-        return '#ERROR: VLOOKUP requires at least 3 arguments (lookup_value, table_array, col_index_num)';
+        throw new Error('VLOOKUP requires at least 3 arguments');
     }
 
-    // Extract and evaluate arguments
-    let lookupValue = await context.evaluate(args[0].value);
-    let tableArray = args[1];
-    let colIndexNum = await context.evaluate(args[2].value);
-    let rangeLookup = true; // Default to approximate match (TRUE)
+    const lookupValue = args[0];
+    const tableArray = args[1];
+    const colIndex = args[2];
+    const rangeLookup = args.length > 3 ? args[3] : true;
 
-    // Check for optional range_lookup argument
-    if (args.length >= 4) {
-        const rangeLookupValue = await context.evaluate(args[3].value);
-        if (typeof rangeLookupValue === 'boolean') {
-            rangeLookup = rangeLookupValue;
-        } else if (typeof rangeLookupValue === 'string') {
-            rangeLookup = rangeLookupValue.toUpperCase() !== 'FALSE';
-        } else {
-            rangeLookup = !!rangeLookupValue;
-        }
+    // Convert colIndex to number
+    const colIndexNum = typeof colIndex === 'number' ? colIndex : parseInt(colIndex);
+    if (isNaN(colIndexNum) || colIndexNum < 1) {
+        throw new Error('Invalid column index number');
     }
 
-    // Validate col_index_num
-    if (typeof colIndexNum !== 'number' || isNaN(colIndexNum) || colIndexNum < 1) {
-        return '#ERROR: Invalid column index number';
-    }
-
-    // Get the table range as a 2D array
+    // Handle table array - it could be a range reference that returns an array of arrays
     let tableData = [];
 
-    if (tableArray.type === 'range') {
-        // Parse the range
-        const startRef = tableArray.start.value;
-        const endRef = tableArray.end.value;
+    if (Array.isArray(tableArray)) {
+        // If tableArray is a flat array from a range, we need to reshape it
+        // For a range like A1:B3, we get a flat array of values
+        // We need to group by rows
+        const sheet = context.dataHolder.getSheet(context.currentSheet);
+        if (rawArgs && rawArgs[1] && rawArgs[1].type === 'RANGE_REF') {
+            const rangeNode = rawArgs[1];
+            const startColNum = context.columnToNumber(rangeNode.startCol);
+            const endColNum = context.columnToNumber(rangeNode.endCol);
+            const colsPerRow = endColNum - startColNum + 1;
 
-        let sheetPrefix = '';
-        let startCell = startRef;
-        let endCell = endRef;
-
-        // Handle cross-sheet references
-        const startMatch = startRef.match(/^([a-zA-Z0-9_]+)\.([A-Z]+[0-9]+)$/);
-        if (startMatch) {
-            sheetPrefix = startMatch[1] + '.';
-            startCell = startMatch[2];
-        }
-
-        const endMatch = endRef.match(/^([a-zA-Z0-9_]+)\.([A-Z]+[0-9]+)$/);
-        if (endMatch) {
-            endCell = endMatch[2];
-        }
-
-        // Parse cell references
-        const startColMatch = startCell.match(/[A-Z]+/);
-        const startRowMatch = startCell.match(/[0-9]+/);
-        const endColMatch = endCell.match(/[A-Z]+/);
-        const endRowMatch = endCell.match(/[0-9]+/);
-
-        if (!startColMatch || !startRowMatch || !endColMatch || !endRowMatch) {
-            return '#ERROR: Invalid table range';
-        }
-
-        const startCol = context.columnToNumber(startColMatch[0]);
-        const startRow = parseInt(startRowMatch[0]);
-        const endCol = context.columnToNumber(endColMatch[0]);
-        const endRow = parseInt(endRowMatch[0]);
-
-        // Build the 2D table array
-        for (let row = startRow; row <= endRow; row++) {
-            const rowData = [];
-            for (let col = startCol; col <= endCol; col++) {
-                const cellRef = context.numberToColumn(col) + row;
-                const fullRef = sheetPrefix ? sheetPrefix + cellRef : cellRef;
-                const cellValue = await context.evaluateCellReference(fullRef);
-                rowData.push(cellValue);
+            // Reshape flat array into rows
+            for (let i = 0; i < tableArray.length; i += colsPerRow) {
+                tableData.push(tableArray.slice(i, i + colsPerRow));
             }
-            tableData.push(rowData);
+        } else {
+            tableData = tableArray;
         }
-    } else {
-        return '#ERROR: VLOOKUP table_array must be a range';
-    }
-
-    // Validate column index
-    if (colIndexNum > tableData[0].length) {
-        return '#ERROR: Column index exceeds table width';
-    }
-
-    // Perform the lookup
-    let matchedRow = null;
-    let matchedIndex = -1;
-
-    if (rangeLookup) {
-        // Approximate match (TRUE) - assumes first column is sorted ascending
-        // Returns the largest value less than or equal to lookup_value
-        for (let i = 0; i < tableData.length; i++) {
-            const cellValue = tableData[i][0];
-
-            // Convert to number for comparison if possible
-            let compareValue = cellValue;
-            let compareLookup = lookupValue;
-
-            if (typeof cellValue === 'number' && typeof lookupValue === 'number') {
-                compareValue = cellValue;
-                compareLookup = lookupValue;
-            } else if (typeof cellValue === 'string' && typeof lookupValue === 'string') {
-                compareValue = cellValue.toLowerCase();
-                compareLookup = lookupValue.toLowerCase();
-            }
-
-            if (compareValue <= compareLookup) {
-                matchedRow = tableData[i];
-                matchedIndex = i;
-            } else {
-                break; // Since sorted, we can stop once value exceeds lookup
-            }
-        }
-
-        // If no match found and we have at least one row, use the first row
-        if (matchedIndex === -1 && tableData.length > 0) {
-            matchedRow = tableData[0];
-            matchedIndex = 0;
-        }
-    } else {
-        // Exact match (FALSE)
-        for (let i = 0; i < tableData.length; i++) {
-            const cellValue = tableData[i][0];
-
-            // Compare values
-            let isMatch = false;
-
-            if (typeof cellValue === 'number' && typeof lookupValue === 'number') {
-                isMatch = cellValue === lookupValue;
-            } else if (typeof cellValue === 'string' && typeof lookupValue === 'string') {
-                isMatch = cellValue.toLowerCase() === lookupValue.toLowerCase();
-            } else {
-                isMatch = cellValue == lookupValue;
-            }
-
-            if (isMatch) {
-                matchedRow = tableData[i];
-                matchedIndex = i;
-                break;
-            }
-        }
-
-        // If no exact match found, return #N/A error
-        if (matchedIndex === -1) {
-            return '#N/A';
+    } else if (typeof tableArray === 'string') {
+        // Try to parse as range
+        const rangeMatch = tableArray.match(/([A-Z]+)(\d+):([A-Z]+)(\d+)/);
+        if (rangeMatch) {
+            // Need to evaluate the range
+            return '#ERROR: Range reference not properly evaluated';
         }
     }
 
-    // Return the value from the specified column (1-indexed)
-    if (matchedRow && colIndexNum <= matchedRow.length) {
-        const result = matchedRow[colIndexNum - 1];
+    if (!Array.isArray(tableData) || tableData.length === 0) {
+        throw new Error('Invalid table range');
+    }
 
-        // Format numbers
-        if (typeof result === 'number' && !isNaN(result)) {
-            return context.formatNumber(result);
+    // Perform lookup
+    for (let i = 0; i < tableData.length; i++) {
+        const row = tableData[i];
+        const compareValue = Array.isArray(row) ? row[0] : row;
+
+        let match = false;
+
+        if (rangeLookup === false || rangeLookup === 0 || rangeLookup === 'FALSE') {
+            // Exact match
+            match = String(compareValue) === String(lookupValue);
+            if (match) {
+                const result = Array.isArray(row) && row.length >= colIndexNum ? row[colIndexNum - 1] : undefined;
+                return result !== undefined ? result : '#N/A';
+            }
+        } else {
+            // Approximate match (requires sorted first column)
+            if (String(compareValue) === String(lookupValue)) {
+                const result = Array.isArray(row) && row.length >= colIndexNum ? row[colIndexNum - 1] : undefined;
+                return result !== undefined ? result : '#N/A';
+            }
         }
-
-        return result !== undefined && result !== null ? result : '';
     }
 
     return '#N/A';

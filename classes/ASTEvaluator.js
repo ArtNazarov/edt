@@ -1,5 +1,4 @@
-import FormulaTokenizer from './FormulaTokenizer.js';
-import FormulaParser from './FormulaParser.js';
+import SimpleFormulaParser from './SimpleFormulaParser.js';
 import FunctionRegistry from './FunctionRegistry.js';
 
 // AST Evaluator
@@ -34,28 +33,44 @@ export default class ASTEvaluator {
 
         try {
             switch (node.type) {
-                case 'number':
+                case 'NUMBER':
                     result = node.value;
                     break;
 
-                case 'cellRef':
-                    result = await this.evaluateCellReference(node.value);
+                case 'STRING':
+                    result = node.value;
                     break;
 
-                case 'binaryOp':
+                case 'CELL_REF':
+                    result = await this.evaluateCellReference(node);
+                    break;
+
+                case 'RANGE_REF':
+                    result = await this.evaluateRangeReference(node);
+                    break;
+
+                case 'BINARY_OP':
                     result = await this.evaluateBinaryOp(node);
                     break;
 
-                case 'function':
-                    result = await this.evaluateFunction(node);
+                case 'UNARY_MINUS':
+                    result = await this.evaluateUnaryMinus(node);
+                    break;
+
+                case 'FUNCTION_CALL':
+                    result = await this.evaluateFunctionCall(node);
                     break;
 
                 default:
+                    console.warn(`Unknown node type: ${node.type}`);
                     result = 0;
             }
 
             if (cellId) {
-                this.cache.set(cellId, result);
+                // Cache numeric results only, not errors
+                if (typeof result === 'number' && !isNaN(result)) {
+                    this.cache.set(cellId, result);
+                }
             }
 
             return result;
@@ -64,15 +79,9 @@ export default class ASTEvaluator {
         }
     }
 
-    async evaluateCellReference(ref) {
-        let sheetName = this.currentSheet;
-        let cellRef = ref;
-
-        const crossMatch = ref.match(/^([a-zA-Z0-9_]+)\.([A-Z]+[0-9]+)$/);
-        if (crossMatch) {
-            sheetName = crossMatch[1];
-            cellRef = crossMatch[2];
-        }
+    async evaluateCellReference(node) {
+        let sheetName = node.sheet || this.currentSheet;
+        let cellRef = `${node.col}${node.row}`;
 
         const sheet = this.dataHolder.getSheet(sheetName);
         if (!sheet) return 0;
@@ -85,8 +94,8 @@ export default class ASTEvaluator {
         if (cellData.startsWith('=')) {
             const evaluator = new ASTEvaluator(this.dataHolder, sheetName);
             try {
-                const tokens = FormulaTokenizer.tokenize(cellData.substring(1));
-                const parser = new FormulaParser(tokens);
+                // Use SimpleFormulaParser instead of FormulaParser
+                const parser = new SimpleFormulaParser(cellData.substring(1));
                 const ast = parser.parse();
                 const result = await evaluator.evaluate(ast, `${sheetName}!${cellRef}`);
                 return result;
@@ -104,13 +113,66 @@ export default class ASTEvaluator {
         return cellData;
     }
 
+    async evaluateRangeReference(node) {
+        const sheetName = node.sheet || this.currentSheet;
+        const startCol = this.columnToNumber(node.startCol);
+        const startRow = node.startRow;
+        const endCol = this.columnToNumber(node.endCol);
+        const endRow = node.endRow;
+
+        const values = [];
+
+        for (let row = startRow; row <= endRow; row++) {
+            for (let col = startCol; col <= endCol; col++) {
+                const colName = this.numberToColumn(col);
+                const cellRef = `${colName}${row}`;
+
+                const sheet = this.dataHolder.getSheet(sheetName);
+                if (sheet) {
+                    const cell = sheet.cells.find(c => c.cell === cellRef);
+                    if (cell && cell.data !== undefined && cell.data !== '') {
+                        const cellData = cell.data.toString();
+                        const num = parseFloat(cellData);
+                        if (!isNaN(num) && isFinite(num)) {
+                            values.push(num);
+                        } else if (!cellData.startsWith('=')) {
+                            // Non-numeric values are ignored in ranges
+                            values.push(cellData);
+                        } else {
+                            // Evaluate formula cells
+                            try {
+                                const evaluator = new ASTEvaluator(this.dataHolder, sheetName);
+                                const parser = new SimpleFormulaParser(cellData.substring(1));
+                                const ast = parser.parse();
+                                const result = await evaluator.evaluate(ast, `${sheetName}!${cellRef}`);
+                                if (typeof result === 'number' && !isNaN(result)) {
+                                    values.push(result);
+                                }
+                            } catch (e) {
+                                console.error(`Error evaluating range cell ${cellRef}:`, e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return values;
+    }
+
     async evaluateBinaryOp(node) {
         const left = await this.evaluate(node.left);
         const right = await this.evaluate(node.right);
 
+        // Handle string concatenation
+        if (node.operator === '+' && (typeof left === 'string' || typeof right === 'string')) {
+            return String(left) + String(right);
+        }
+
+        // Handle numeric operations
         if (typeof left === 'number' && typeof right === 'number') {
             let result;
-            switch (node.value) {
+            switch (node.operator) {
                 case '+': result = left + right; break;
                 case '-': result = left - right; break;
                 case '*': result = left * right; break;
@@ -120,21 +182,46 @@ export default class ASTEvaluator {
             return Math.round(result * 100) / 100;
         }
 
-        if (node.value === '+') {
+        // Handle number + string cases
+        if (node.operator === '+') {
             return String(left) + String(right);
         }
 
         return 0;
     }
 
-    async evaluateFunction(node) {
-        const functionName = node.value;
+    async evaluateUnaryMinus(node) {
+        const value = await this.evaluate(node.operand);
+        if (typeof value === 'number') {
+            return -value;
+        }
+        return 0;
+    }
+
+    async evaluateFunctionCall(node) {
+        const functionName = node.name;
+        const args = node.arguments || [];
 
         try {
             // Load the function dynamically
             const fn = await this.functionRegistry.loadFunction(functionName);
 
-            // Create a context object with helper methods
+            // Evaluate all arguments first
+            const evaluatedArgs = [];
+            for (const arg of args) {
+                // Check if argument is a range reference
+                if (arg.type === 'RANGE_REF') {
+                    const rangeValues = await this.evaluateRangeReference(arg);
+                    evaluatedArgs.push(rangeValues);
+                } else {
+                    const evaluated = await this.evaluate(arg);
+                    evaluatedArgs.push(evaluated);
+                }
+            }
+
+            console.log(`Function ${functionName} evaluated args:`, evaluatedArgs);
+
+            // Create a context object with helper methods for functions
             const context = {
                 evaluateRange: async (startNode, endNode) => {
                     return await this.evaluateRange(startNode, endNode);
@@ -143,7 +230,8 @@ export default class ASTEvaluator {
                     return await this.evaluate(argNode);
                 },
                 evaluateCellReference: async (ref) => {
-                    return await this.evaluateCellReference(ref);
+                    const cellNode = { type: 'CELL_REF', sheet: null, col: ref.col, row: ref.row };
+                    return await this.evaluateCellReference(cellNode);
                 },
                 getSheet: (sheetName) => {
                     return this.dataHolder.getSheet(sheetName);
@@ -156,14 +244,24 @@ export default class ASTEvaluator {
                     return Math.round(num * 100) / 100;
                 },
                 columnToNumber: (col) => this.columnToNumber(col),
-                numberToColumn: (num) => this.numberToColumn(num)
+                numberToColumn: (num) => this.numberToColumn(num),
+                parseCellAddress: (cellRef) => {
+                    const match = cellRef.match(/([A-Z]+)(\d+)/);
+                    if (match) {
+                        return { col: match[1], row: parseInt(match[2], 10) };
+                    }
+                    return null;
+                }
             };
 
-            // Execute the function with node args and context
-            const result = await fn(node.args, context);
+            // Execute the function with evaluated args and context
+            let result = await fn(evaluatedArgs, context, args);
 
             // Format numeric results
-            if (typeof result === 'number' && !isNaN(result)) {
+            if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+                if (functionName === 'PI' || functionName === 'EPS') {
+                    return result;
+                }
                 return Math.round(result * 100) / 100;
             }
             return result;
@@ -172,55 +270,6 @@ export default class ASTEvaluator {
             console.error(`Error evaluating function ${functionName}:`, error);
             return `#ERROR: ${error.message}`;
         }
-    }
-
-    async evaluateRange(startNode, endNode) {
-        const startRef = startNode.value;
-        const endRef = endNode.value;
-
-        let sheetPrefix = '';
-        let startCell = startRef;
-        let endCell = endRef;
-
-        const startMatch = startRef.match(/^([a-zA-Z0-9_]+)\.([A-Z]+[0-9]+)$/);
-        if (startMatch) {
-            sheetPrefix = startMatch[1] + '.';
-            startCell = startMatch[2];
-        }
-
-        const endMatch = endRef.match(/^([a-zA-Z0-9_]+)\.([A-Z]+[0-9]+)$/);
-        if (endMatch) {
-            endCell = endMatch[2];
-        }
-
-        const startColMatch = startCell.match(/[A-Z]+/);
-        const startRowMatch = startCell.match(/[0-9]+/);
-        const endColMatch = endCell.match(/[A-Z]+/);
-        const endRowMatch = endCell.match(/[0-9]+/);
-
-        if (!startColMatch || !startRowMatch || !endColMatch || !endRowMatch) {
-            return [];
-        }
-
-        const startCol = this.columnToNumber(startColMatch[0]);
-        const startRow = parseInt(startRowMatch[0]);
-        const endCol = this.columnToNumber(endColMatch[0]);
-        const endRow = parseInt(endRowMatch[0]);
-
-        const values = [];
-
-        for (let row = startRow; row <= endRow; row++) {
-            for (let col = startCol; col <= endCol; col++) {
-                const cellRef = this.numberToColumn(col) + row;
-                const fullRef = sheetPrefix ? sheetPrefix + cellRef : cellRef;
-                const val = await this.evaluateCellReference(fullRef);
-                if (typeof val === 'number' && !isNaN(val)) {
-                    values.push(val);
-                }
-            }
-        }
-
-        return values;
     }
 
     columnToNumber(col) {
@@ -233,10 +282,11 @@ export default class ASTEvaluator {
 
     numberToColumn(num) {
         let result = '';
-        while (num > 0) {
-            num--;
-            result = String.fromCharCode(65 + (num % 26)) + result;
-            num = Math.floor(num / 26);
+        let n = num;
+        while (n > 0) {
+            n--;
+            result = String.fromCharCode(65 + (n % 26)) + result;
+            n = Math.floor(n / 26);
         }
         return result;
     }
