@@ -468,50 +468,103 @@ Reference cells from other worksheets using the `sheetname.cell` format.
 
 ## File Structure
 
-... (existing content remains the same, add new function files to the list) ...
-
 ```
-├── functions/            # Spreadsheet function implementations
-│   ├── sum.js
-│   ├── avg.js
-│   ├── max.js
-│   ├── min.js
-│   ├── count.js
-│   ├── sumproduct.js
-│   ├── vlookup.js
-│   ├── abs.js
-│   ├── acos.js
-│   ├── angle.js
-│   ├── asin.js
-│   ├── atn.js
-│   ├── ceil.js
-│   ├── cos.js
-│   ├── cot.js
-│   ├── csc.js
-│   ├── date.js
-│   ├── deg.js
-│   ├── eps.js
-│   ├── exp.js
-│   ├── floor.js
-│   ├── fp.js
-│   ├── inf.js
-│   ├── ip.js
-│   ├── log.js
-│   ├── log10.js
-│   ├── mod.js
-│   ├── pi.js
-│   ├── rad.js
-│   ├── rmd.js
-│   ├── rnd.js
-│   ├── sec.js
-│   ├── sgn.js
-│   ├── sin.js
-│   ├── sqr.js
-│   ├── tan.js
-│   └── time.js
+.
+├── actions
+│   ├── ActionAddTip.js
+│   ├── ActionCopy.js
+│   ├── ActionCut.js
+│   ├── ActionDeleteTip.js
+│   ├── ActionEditTip.js
+│   ├── ActionHideTip.js
+│   ├── ActionMoveToBottom.js
+│   ├── ActionMoveToLeft.js
+│   ├── ActionMoveToRight.js
+│   ├── ActionMoveToTop.js
+│   ├── ActionPaste.js
+│   ├── ActionShowTip.js
+│   ├── ActionStepDown.js
+│   ├── ActionStepLeft.js
+│   ├── ActionStepRight.js
+│   ├── ActionStepUp.js
+│   ├── ExportCSVAction.js
+│   ├── MoveFocusDownAction.js
+│   ├── MoveFocusLeftAction.js
+│   ├── MoveFocusRightAction.js
+│   ├── MoveFocusUpAction.js
+│   ├── OpenAction.js
+│   ├── SaveAction.js
+│   └── SelectAllCellsAction.js
+├── classes
+│   ├── AppController.js
+│   ├── ASTEvaluator.js
+│   ├── ASTNode.js
+│   ├── CellsEditablesController.js
+│   ├── CommandLine.js
+│   ├── ComputationEngine.js
+│   ├── DataHolder.js
+│   ├── FormulaTokenizer.js
+│   ├── FunctionRegistry.js
+│   ├── MainMenu.js
+│   ├── NavButtonsController.js
+│   ├── PopupContextMenu.js
+│   ├── SelectionDataHolder.js
+│   ├── SelectionManager.js
+│   ├── SelectionViewDrawer.js
+│   ├── SheetView.js
+│   ├── SimpleFormulaParser.js
+│   ├── UITip.js
+│   └── ViewModel.js
+├── commandline.css
+├── edt.css
+├── edt.html
+├── edt.js
+├── functions
+│   ├── abs.js
+│   ├── acos.js
+│   ├── angle.js
+│   ├── asin.js
+│   ├── atn.js
+│   ├── avg.js
+│   ├── ceil.js
+│   ├── cos.js
+│   ├── cot.js
+│   ├── count.js
+│   ├── csc.js
+│   ├── date.js
+│   ├── deg.js
+│   ├── eps.js
+│   ├── exp.js
+│   ├── floor.js
+│   ├── fp.js
+│   ├── inf.js
+│   ├── ip.js
+│   ├── log10.js
+│   ├── log.js
+│   ├── max.js
+│   ├── min.js
+│   ├── mod.js
+│   ├── pi.js
+│   ├── rad.js
+│   ├── rmd.js
+│   ├── rnd.js
+│   ├── sec.js
+│   ├── sgn.js
+│   ├── sin.js
+│   ├── sqr.js
+│   ├── sum.js
+│   ├── sumproduct.js
+│   ├── tan.js
+│   ├── time.js
+│   └── vlookup.js
+├── LICENSE
+├── mainmenu.css
+├── README.md
+├── test.html
+└── testing
+    ├── tests.css
+    └── tests.js
 ```
-
----
 
 ## Testing
 
