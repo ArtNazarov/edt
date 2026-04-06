@@ -6,7 +6,7 @@ A JavaScript application that displays an editable spreadsheet-like table with v
 
 ![UI](https://dl.dropbox.com/scl/fi/ppuzeijjt37vvyxsr54nx/tips.png?rlkey=t05p0zh7zhon2swdbo44j86bx&st=xrofpbil)
 
-![Tests](https://dl.dropbox.com/scl/fi/jzeh2u30dpyiio1wqoa8r/newtests.png?rlkey=a2i1qpk0ko4xw34xir6lxtptn&st=l1seamqp)
+![Tests](https://dl.dropbox.com/scl/fi/gdvwei4hy42fmrxv4rclz/newtests_power.png?rlkey=e3q9yw0fqsoftyc6j0pwglbfq&st=n5njys7w)
 
 ![Selections: Parts](https://dl.dropbox.com/scl/fi/k5s9bxiyzbtmcq5t2s86c/selections.png?rlkey=7z0tc7o4ilh6s18tvmtvq51bw&st=6q9akev7)
 
